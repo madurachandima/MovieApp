@@ -1,6 +1,6 @@
 package com.madura.movieapp.data.dto
 
-data class Movy(
+data class Movie(
     val background_image: String,
     val background_image_original: String,
     val date_uploaded: String,

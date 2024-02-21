@@ -11,7 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.madura.movieapp.presentation.screens.theme.MovieAppTheme
-import com.madura.movieapp.presentation.screens.theme.homeScreen.HomeScreen
+import com.madura.movieapp.presentation.screens.homeScreen.HomeScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
