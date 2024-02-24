@@ -1,4 +1,4 @@
-package com.madura.movieapp.presentation.screens.theme
+package com.madura.movieapp.presentation.theme
 
 import android.app.Activity
 import android.os.Build

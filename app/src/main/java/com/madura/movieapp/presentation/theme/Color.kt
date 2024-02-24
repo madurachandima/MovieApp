@@ -1,4 +1,4 @@
-package com.madura.movieapp.presentation.screens.theme
+package com.madura.movieapp.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 
