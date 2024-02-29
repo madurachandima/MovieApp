@@ -15,4 +15,8 @@ data class Torrent(
     val type: String,
     val url: String,
     val video_codec: String
-)
+) {
+    override fun toString(): String {
+        return "Torrent(audio_channels='$audio_channels', bit_depth='$bit_depth', date_uploaded='$date_uploaded', date_uploaded_unix=$date_uploaded_unix, hash='$hash', is_repack='$is_repack', peers=$peers, quality='$quality', seeds=$seeds, size='$size', size_bytes=$size_bytes, type='$type', url='$url', video_codec='$video_codec')"
+    }
+}

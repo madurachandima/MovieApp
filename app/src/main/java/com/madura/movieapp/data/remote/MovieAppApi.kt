@@ -10,5 +10,9 @@ interface MovieAppApi {
         @Query("limit") limit: Int,
         @Query("page") page: Int,
         @Query("query_term") query: String,
-        ) : MovieListDto
+        @Query("sort_by") sortBy: String,
+        @Query("genre") genre: String?,
+    ): MovieListDto
+
+
 }

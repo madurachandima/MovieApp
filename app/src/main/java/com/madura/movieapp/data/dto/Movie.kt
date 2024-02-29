@@ -27,4 +27,8 @@ data class Movie(
     val url: String,
     val year: Int,
     val yt_trailer_code: String
-)
+) {
+    override fun toString(): String {
+        return "Movie(background_image='$background_image', background_image_original='$background_image_original', date_uploaded='$date_uploaded', date_uploaded_unix=$date_uploaded_unix, description_full='$description_full', genres=$genres, id=$id, imdb_code='$imdb_code', language='$language', large_cover_image='$large_cover_image', medium_cover_image='$medium_cover_image', mpa_rating='$mpa_rating', rating=$rating, runtime=$runtime, slug='$slug', small_cover_image='$small_cover_image', state='$state', summary='$summary', synopsis='$synopsis', title='$title', title_english='$title_english', title_long='$title_long', torrents=$torrents, url='$url', year=$year, yt_trailer_code='$yt_trailer_code')"
+    }
+}

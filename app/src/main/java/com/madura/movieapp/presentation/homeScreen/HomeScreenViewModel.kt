@@ -25,65 +25,74 @@ class HomeScreenViewModel @Inject constructor(
     private val _state = mutableStateOf(MovieListState())
     val state: State<MovieListState> = _state
 
-    private var movieListDto: MovieListDto? = MovieListDto()
+    private val _popularMovieState = mutableStateOf(PopularMovieListState())
+    val popularMovieState: State<PopularMovieListState> = _popularMovieState
+
+    //    private var movieListDto: MovieListDto? = MovieListDto()
     private var page: Int = 1
     private val query: String = ""
 
     var movieList = mutableStateOf<ArrayList<Movie>>(arrayListOf())
 
-
-    //ArrayList<Movie> = arrayListOf()
-
-
     init {
+        getMovies(sortBy = "download_count", enableSort = true)
         getMovies()
     }
 
 
-    fun getMovies() {
-//        if (itemIndex == null) {
-//            getMoveUseCase(query = query, page = page).onEach { result ->
-//                when (result) {
-//                    is Resource.Success -> {
-//                        movieListDto = result.data
-//                        movieList.value = movieListDto!!.data!!.movies
-//                        _state.value = MovieListState(movies = movieList.value)
-//                        page++
-//                    }
-//
-//                    is Resource.Error -> {
-//                        _state.value =
-//                            MovieListState(error = result.message ?: "An unexpected error occurred")
-//                    }
-//
-//                    is Resource.Loading -> {
-//                        _state.value = MovieListState(isLoading = true)
-//                    }
-//
-//                }
-//            }.launchIn(viewModelScope)
-//        }
+    fun getMovies(
+        sortBy: String? = null,
+        enableSort: Boolean = false,
+        genre: String? = null,
+        resetPage: Boolean = false,
+    ) {
+        if (resetPage) page = 1
 
-
-        getMoveUseCase(query = query, page = page).onEach { result ->
+        getMoveUseCase(
+            query = query,
+            page = page,
+            sortBy = sortBy,
+            genre = genre
+        ).onEach { result ->
             when (result) {
                 is Resource.Success -> {
-                    val movie = result.data
-                    movieList.value.addAll(movie!!.data!!.movies)
-                    Log.d(TAG, "length ----->>>> ${movieList.value.size}")
-                    _state.value = MovieListState(movies = movieList.value)
-                    page++
+                    try {
+                        if (enableSort) {
+                            _popularMovieState.value =
+                                PopularMovieListState(sortedMovies = result.data!!.data!!.movies)
+                        } else {
+                            val movie = result.data
+                            if (resetPage) movieList.value.clear()
+                            movieList.value.addAll(movie!!.data!!.movies)
+                            Log.d(TAG, "movie list ---------> ${movieList.value.size}")
+                            _state.value = MovieListState(movies = movieList.value)
+                            page++
+                        }
+                    } catch (e: Exception) {
+                        _state.value =
+                            MovieListState(error = result.message ?: "An unexpected error occurred")
+                        PopularMovieListState(
+                            error = result.message ?: "An unexpected error occurred"
+                        )
+                    }
+
                 }
 
                 is Resource.Error -> {
                     _state.value =
                         MovieListState(error = result.message ?: "An unexpected error occurred")
+                    PopularMovieListState(
+                        error = result.message ?: "An unexpected error occurred"
+                    )
                 }
 
                 is Resource.Loading -> {
                     _state.value = MovieListState(
-                        isLoading = movieList.value.isEmpty(),
+                        isLoading = if (resetPage) true else movieList.value.isEmpty(),
                         isPaginationLoading = movieList.value.isNotEmpty()
+                    )
+                    PopularMovieListState(
+                        isLoading = true
                     )
                 }
 
