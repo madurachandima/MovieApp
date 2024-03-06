@@ -1,7 +1,7 @@
 package com.madura.movieapp.data.repository
 
-import android.util.Log
-import com.madura.movieapp.data.dto.MovieListDto
+import com.madura.movieapp.data.dto.movieDetailsDto.MovieDetailsDto
+import com.madura.movieapp.data.dto.movieListDto.MovieListDto
 import com.madura.movieapp.data.remote.MovieAppApi
 import com.madura.movieapp.domain.repository.MovieRepository
 import javax.inject.Inject
@@ -22,6 +22,18 @@ class MovieRepositoryImpl @Inject constructor(
             page = page ?: 1,
             sortBy = sortBy ?: "date_added",
             genre = genre
+        )
+    }
+
+    override suspend fun getMovieDetailsById(
+        movieId: Int,
+        withImage: Boolean?,
+        withCast: Boolean?,
+    ): MovieDetailsDto {
+        return api.getMovieDetailById(
+            movieId = movieId,
+            withImage = withImage ?: true,
+            withCast = withCast ?: true
         )
     }
 }

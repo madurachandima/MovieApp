@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -20,7 +19,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,23 +35,21 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.madura.movieapp.common.Category.movieGenre
-import com.madura.movieapp.data.dto.Movie
+import com.madura.movieapp.data.dto.movieListDto.Movie
+import com.madura.movieapp.presentation.Screen
 import com.madura.movieapp.presentation.theme.darkPurple
 import com.madura.movieapp.presentation.theme.red
 import com.madura.movieapp.presentation.theme.white
 import com.madura.movieapp.ui.composable.OnBottomReached
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import com.madura.movieapp.ui.composable.OnBottomReached as On
 
 
-@Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun HomeScreen(
+    navController: NavController,
     viewModel: HomeScreenViewModel = hiltViewModel(),
 ) {
 
@@ -93,7 +89,9 @@ fun HomeScreen(
                     verticalAlignment = Alignment.Top
                 ) {
                     items(popularState.sortedMovies) { sortedMovie ->
-                        ImageItem(sortedMovie)
+                        ImageItem(sortedMovie, Modifier.clickable {
+                            navController.navigate(Screen.MovieDetailsScreen.route + "/${sortedMovie.id}")
+                        })
                     }
                 }
 
@@ -116,7 +114,6 @@ fun HomeScreen(
                                 .clip(shape = RoundedCornerShape(10.dp))
                                 .background(color = if (isSelected) red else darkPurple)
                                 .clickable {
-
                                     coroutineScope
                                         .launch {
                                             selectedGenre.value = genre
@@ -155,7 +152,9 @@ fun HomeScreen(
                         contentPadding = PaddingValues(0.dp)
                     ) {
                         itemsIndexed(viewModel.movieList.value) { index, item ->
-                            ImageItem(item)
+                            ImageItem(item, Modifier.clickable {
+                                navController.navigate(Screen.MovieDetailsScreen.route + "/${item.id}")
+                            })
                         }
                     }
 
@@ -191,10 +190,10 @@ fun HomeScreen(
 
 
 @Composable
-fun ImageItem(move: Movie) {
+fun ImageItem(move: Movie, modifier: Modifier) {
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier
+        modifier = modifier
             .padding(8.dp)
             .clip(shape = RoundedCornerShape(10.dp))
     ) {

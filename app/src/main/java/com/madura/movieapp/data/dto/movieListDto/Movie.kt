@@ -1,4 +1,4 @@
-package com.madura.movieapp.data.dto
+package com.madura.movieapp.data.dto.movieListDto
 
 data class Movie(
     val background_image: String,

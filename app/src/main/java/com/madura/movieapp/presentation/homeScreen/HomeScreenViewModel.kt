@@ -2,14 +2,11 @@ package com.madura.movieapp.presentation.homeScreen
 
 import android.util.Log
 import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.madura.movieapp.common.Resource
-import com.madura.movieapp.data.dto.Data
-import com.madura.movieapp.data.dto.Movie
-import com.madura.movieapp.data.dto.MovieListDto
+import com.madura.movieapp.data.dto.movieListDto.Movie
 import com.madura.movieapp.domain.use_case.get_movies.GetMoveUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.launchIn
@@ -28,7 +25,6 @@ class HomeScreenViewModel @Inject constructor(
     private val _popularMovieState = mutableStateOf(PopularMovieListState())
     val popularMovieState: State<PopularMovieListState> = _popularMovieState
 
-    //    private var movieListDto: MovieListDto? = MovieListDto()
     private var page: Int = 1
     private val query: String = ""
 

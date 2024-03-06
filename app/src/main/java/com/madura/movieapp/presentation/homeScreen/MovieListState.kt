@@ -1,6 +1,6 @@
 package com.madura.movieapp.presentation.homeScreen
 
-import com.madura.movieapp.data.dto.Movie
+import com.madura.movieapp.data.dto.movieListDto.Movie
 
 
 data class MovieListState(
