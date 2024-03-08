@@ -36,4 +36,10 @@ class MovieRepositoryImpl @Inject constructor(
             withCast = withCast ?: true
         )
     }
+
+    override suspend fun getMovieSuggestionsById(movieId: Int): MovieListDto {
+        return api.getMovieSuggestionsById(
+            movieId = movieId,
+            )
+    }
 }

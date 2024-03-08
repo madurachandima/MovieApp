@@ -11,4 +11,8 @@ interface MovieRepository {
         withImage: Boolean?,
         withCast: Boolean?,
     ): MovieDetailsDto
+
+    suspend fun getMovieSuggestionsById(
+        movieId: Int,
+    ): MovieListDto
 }

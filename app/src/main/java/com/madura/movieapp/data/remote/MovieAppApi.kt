@@ -22,5 +22,10 @@ interface MovieAppApi {
         @Query("with_cast") withCast: Boolean,
     ): MovieDetailsDto
 
+    @GET("movie_suggestions.json")
+    suspend fun getMovieSuggestionsById(
+        @Query("movie_id") movieId: Int,
+    ): MovieListDto
+
 
 }
