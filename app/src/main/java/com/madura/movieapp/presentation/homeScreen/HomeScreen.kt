@@ -18,17 +18,33 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Favorite
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.List
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -44,6 +60,13 @@ import com.madura.movieapp.presentation.theme.white
 import com.madura.movieapp.ui.composable.OnBottomReached
 import kotlinx.coroutines.launch
 
+
+data class BottomNavigationItem(
+    val title: String,
+    val selectedIcon: ImageVector,
+    val unSelectedIcon: ImageVector,
+    val route: String,
+)
 
 @Composable
 fun HomeScreen(
@@ -63,7 +86,60 @@ fun HomeScreen(
 
     val coroutineScope = rememberCoroutineScope()
 
-    Scaffold(modifier = Modifier.fillMaxSize()) { contentPadding ->
+    val items = listOf(
+        BottomNavigationItem(
+            title = "For you",
+            selectedIcon = Icons.Filled.Home,
+            unSelectedIcon = Icons.Outlined.Home,
+            route = Screen.HomeScreen.route
+        ),
+        BottomNavigationItem(
+            title = "Search",
+            selectedIcon = Icons.Filled.Search,
+            unSelectedIcon = Icons.Outlined.Search,
+            route = Screen.SearchScreen.route
+        ),
+        BottomNavigationItem(
+            title = "Favorite",
+            selectedIcon = Icons.Filled.Favorite,
+            unSelectedIcon = Icons.Outlined.Favorite,
+            route = Screen.FavoriteScreen.route
+        ),
+        BottomNavigationItem(
+            title = "Watch List",
+            selectedIcon = Icons.Filled.List,
+            unSelectedIcon = Icons.Outlined.List,
+            route = Screen.WatchListScreen.route
+        )
+    )
+
+    var selectedItemIndex by rememberSaveable {
+        mutableStateOf(0)
+    }
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        bottomBar = {
+            NavigationBar {
+                items.forEachIndexed { index, item ->
+                    NavigationBarItem(
+                        selected = selectedItemIndex == index,
+                        onClick = {
+                            selectedItemIndex = index
+//                            navController.navigate(item.route)
+                        },
+                        label = { Text(text = item.title) },
+                        icon = {
+                            Icon(
+                                imageVector = if (selectedItemIndex == index) item.selectedIcon else item.unSelectedIcon,
+                                contentDescription = item.title
+                            )
+                        })
+                }
+            }
+        }
+
+    )
+    { contentPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
