@@ -23,6 +23,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.outlined.AddCircle
+import androidx.compose.material.icons.outlined.Favorite
+import androidx.compose.material.icons.rounded.AddCircle
+import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -87,7 +91,7 @@ fun MovieDetailsScreen(
             modifier = Modifier.fillMaxSize(),
             topBar = {
                 TopAppBar(title = { Text(text = "") }, navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack()}) {
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "null")
                     }
                 })
@@ -201,6 +205,30 @@ fun MovieDetailsScreen(
                                                     color = white,
                                                     fontWeight = FontWeight.W500,
                                                 )
+                                        }
+
+                                        Row(
+                                            modifier = Modifier,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            IconButton(
+                                                onClick = {
+
+                                                }) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.FavoriteBorder,
+                                                    contentDescription = null
+                                                )
+                                            }
+                                            IconButton(
+                                                onClick = {
+
+                                                }) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.AddCircle,
+                                                    contentDescription = null
+                                                )
+                                            }
                                         }
 
                                     }

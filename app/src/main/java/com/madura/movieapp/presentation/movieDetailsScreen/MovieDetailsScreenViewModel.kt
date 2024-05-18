@@ -21,8 +21,7 @@ class MovieDetailsScreenViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val getMovieDetailsUseCase: GetMovieDetailsUseCase,
     private val getMovieSuggestionsUseCase: GetMovieSuggestionsUseCase,
-
-    ) : ViewModel() {
+) : ViewModel() {
     private val TAG = "MovieDetailsScreenViewModel"
 
     private val _movieDetailsState = mutableStateOf(MovieDetailsState())
@@ -30,7 +29,6 @@ class MovieDetailsScreenViewModel @Inject constructor(
 
     private val _movieSuggestionState = mutableStateOf(MovieSuggestionState())
     val movieSuggestionState: State<MovieSuggestionState> = _movieSuggestionState
-
 
     init {
         savedStateHandle.get<String>(Constants.PARAM_MOVIE_ID)?.let { movieId ->

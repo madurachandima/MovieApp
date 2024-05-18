@@ -86,58 +86,9 @@ fun HomeScreen(
 
     val coroutineScope = rememberCoroutineScope()
 
-    val items = listOf(
-        BottomNavigationItem(
-            title = "For you",
-            selectedIcon = Icons.Filled.Home,
-            unSelectedIcon = Icons.Outlined.Home,
-            route = Screen.HomeScreen.route
-        ),
-        BottomNavigationItem(
-            title = "Search",
-            selectedIcon = Icons.Filled.Search,
-            unSelectedIcon = Icons.Outlined.Search,
-            route = Screen.SearchScreen.route
-        ),
-        BottomNavigationItem(
-            title = "Favorite",
-            selectedIcon = Icons.Filled.Favorite,
-            unSelectedIcon = Icons.Outlined.Favorite,
-            route = Screen.FavoriteScreen.route
-        ),
-        BottomNavigationItem(
-            title = "Watch List",
-            selectedIcon = Icons.Filled.List,
-            unSelectedIcon = Icons.Outlined.List,
-            route = Screen.WatchListScreen.route
-        )
-    )
 
-    var selectedItemIndex by rememberSaveable {
-        mutableStateOf(0)
-    }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        bottomBar = {
-            NavigationBar {
-                items.forEachIndexed { index, item ->
-                    NavigationBarItem(
-                        selected = selectedItemIndex == index,
-                        onClick = {
-                            selectedItemIndex = index
-//                            navController.navigate(item.route)
-                        },
-                        label = { Text(text = item.title) },
-                        icon = {
-                            Icon(
-                                imageVector = if (selectedItemIndex == index) item.selectedIcon else item.unSelectedIcon,
-                                contentDescription = item.title
-                            )
-                        })
-                }
-            }
-        }
-
     )
     { contentPadding ->
         Box(
