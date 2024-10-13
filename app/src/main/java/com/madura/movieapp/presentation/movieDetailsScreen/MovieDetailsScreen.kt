@@ -55,11 +55,13 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.madura.movieapp.R
 import com.madura.movieapp.common.ExpandedText
+import com.madura.movieapp.data.dto.movieDbDto.FavoriteMovieDto
 import com.madura.movieapp.data.dto.movieDetailsDto.Cast
 import com.madura.movieapp.presentation.Screen
 import com.madura.movieapp.presentation.composible.MovieItem
 import com.madura.movieapp.presentation.theme.red
 import com.madura.movieapp.presentation.theme.white
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -117,7 +119,8 @@ fun MovieDetailsScreen(
                                             .clip(shape = RoundedCornerShape(20.dp))
                                     ) {
                                         MovieItem(
-                                            url = state.movieDetails.medium_cover_image!!,
+                                            url = state.movieDetails.medium_cover_image
+                                                ?: state.movieDetails.background_image ?: "",
                                             modifier = Modifier,
                                             radius = 20.dp
                                         )
@@ -189,22 +192,24 @@ fun MovieDetailsScreen(
                                                     fontWeight = FontWeight.W500,
                                                 )
                                             else
-                                                Text(
-                                                    text = "${
-                                                        fromMinutesToHHmm(state.movieDetails.runtime).split(
-                                                            ":"
-                                                        )
-                                                            .first()
-                                                    }h  ${
-                                                        fromMinutesToHHmm(state.movieDetails.runtime).split(
-                                                            ":"
-                                                        )
-                                                            .last()
-                                                    }min",
-                                                    fontSize = 14.sp,
-                                                    color = white,
-                                                    fontWeight = FontWeight.W500,
-                                                )
+                                                if (state.movieDetails.runtime != null)
+                                                    Text(
+                                                        text = "${
+                                                            fromMinutesToHHmm(state.movieDetails.runtime!!).split(
+                                                                ":"
+                                                            )
+                                                                .first()
+                                                        }h  ${
+                                                            fromMinutesToHHmm(state.movieDetails.runtime!!).split(
+                                                                ":"
+                                                            )
+                                                                .last()
+                                                        }min",
+                                                        fontSize = 14.sp,
+                                                        color = white,
+                                                        fontWeight = FontWeight.W500,
+                                                    )
+                                                else Text("")
                                         }
 
                                         Row(
@@ -213,6 +218,47 @@ fun MovieDetailsScreen(
                                         ) {
                                             IconButton(
                                                 onClick = {
+
+
+                                                    var favoriteMovieDto = FavoriteMovieDto(
+                                                        movieId = state.movieDetails.id!!,
+                                                        backgroundImage = state.movieDetails.medium_cover_image
+                                                            ?: "",
+                                                        backgroundImageOriginal = state.movieDetails.background_image_original
+                                                            ?: "",
+                                                        slug = state.movieDetails.slug ?: "",
+                                                        smallCoverImage = state.movieDetails.small_cover_image
+                                                            ?: "",
+                                                        title = state.movieDetails.title ?: "",
+                                                        titleEnglish = state.movieDetails.title_english
+                                                            ?: "",
+                                                        titleLong = state.movieDetails.title_long
+                                                            ?: "",
+                                                        rating = if (state.movieDetails.rating == null) "_" else state.movieDetails.rating.toString(),
+                                                        year = if (state.movieDetails.year == null) "_" else state.movieDetails.year.toString(),
+                                                        runtime = if (state.movieDetails.runtime != null)
+                                                            "${
+                                                                fromMinutesToHHmm(state.movieDetails.runtime!!).split(
+                                                                    ":"
+                                                                )
+                                                                    .first()
+                                                            }h  ${
+                                                                fromMinutesToHHmm(state.movieDetails.runtime!!).split(
+                                                                    ":"
+                                                                )
+                                                                    .last()
+                                                            }min" else "_",
+                                                        isWatched = false,
+                                                        isFavorite = true,
+
+                                                        )
+
+                                                    coroutineScope.launch {
+                                                        viewModel.insertToFavoriteMovie(
+                                                            favoriteMovieDto
+                                                        )
+                                                    }
+
 
                                                 }) {
                                                 Icon(
@@ -244,20 +290,20 @@ fun MovieDetailsScreen(
                                         color = white,
                                         fontWeight = FontWeight.W500,
                                     )
-                                else if (state.movieDetails.description_intro.length < 499)
+                                else if (state.movieDetails.description_intro!!.length < 499)
                                     Text(
-                                        text = state.movieDetails.description_intro,
+                                        text = state.movieDetails.description_intro!!,
                                         fontSize = 14.sp,
                                         color = white,
                                         fontWeight = FontWeight.W500,
                                     )
                                 else
                                     ExpandedText(
-                                        text = state.movieDetails.description_intro.substring(
+                                        text = state.movieDetails.description_intro!!.substring(
                                             0,
                                             500
                                         ),
-                                        expandedText = state.movieDetails.description_intro,
+                                        expandedText = state.movieDetails.description_intro!!,
                                         expandedTextButton = "See more",
                                         shrinkTextButton = "Less",
                                         textStyle = TextStyle(
@@ -287,7 +333,7 @@ fun MovieDetailsScreen(
                                             .fillMaxWidth()
                                             .padding(top = 20.dp)
                                     ) {
-                                        items(state.movieDetails.cast) { cast ->
+                                        items(state.movieDetails.cast!!) { cast ->
                                             ActorCard(cast)
                                         }
 

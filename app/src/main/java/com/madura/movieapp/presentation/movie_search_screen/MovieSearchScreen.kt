@@ -1,5 +1,6 @@
 package com.madura.movieapp.presentation.movie_search_screen
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -7,19 +8,16 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.currentComposer
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,7 +32,6 @@ import androidx.navigation.NavController
 import com.madura.movieapp.presentation.Screen
 import com.madura.movieapp.presentation.composible.MovieItem
 import com.madura.movieapp.presentation.composible.searchTextField
-import com.madura.movieapp.presentation.homeScreen.HomeScreenViewModel
 import com.madura.movieapp.ui.composable.OnBottomReached
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -45,7 +42,7 @@ fun MovieSearchScreen(
     navController: NavController,
     viewModel: MovieSearchScreenViewModel = hiltViewModel(),
 ) {
-
+val TAG = "MovieSearchScreen"
     val state = viewModel.state.value
 
     val gridState = rememberLazyGridState()
@@ -60,6 +57,12 @@ fun MovieSearchScreen(
     }
 
 
+    DisposableEffect(key1 = viewModel) {
+        onDispose {
+            viewModel.clearSearchValues()
+        }
+
+    }
 
     Scaffold { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
@@ -70,10 +73,10 @@ fun MovieSearchScreen(
             ) {
                 searchTextField { value ->
                     searchQuery = value
-
+                    Log.d(TAG,"------------------>>>>>>>>>>>> $searchQuery")
                     if (searchQuery == "" || searchQuery.isEmpty()) {
-                        viewModel.movieList.value.clear()
-                        viewModel.query = ""
+                        viewModel.clearSearchValues()
+                        Log.d(TAG,"------------------>>>>>>>>>>>> empty")
                         return@searchTextField
                     } else {
                         searchJob?.cancel()
@@ -85,7 +88,7 @@ fun MovieSearchScreen(
 
                 }
 
-                if (viewModel.movieList.value.isNotEmpty() && !state.isLoading)
+                if (viewModel.movieList.value != null && viewModel.movieList.value.isNotEmpty() && !state.isLoading)
                     LazyVerticalGrid(
                         state = gridState,
                         columns = GridCells.Adaptive(minSize = 100.dp),
@@ -99,7 +102,7 @@ fun MovieSearchScreen(
                     }
             }
 
-            if (viewModel.movieList.value.isNotEmpty()) {
+            if (viewModel.movieList.value != null && viewModel.movieList.value.isNotEmpty()) {
                 gridState.OnBottomReached {
                     coroutineScope.launch {
                         if (searchQuery == "" || searchQuery.isEmpty())
@@ -108,7 +111,11 @@ fun MovieSearchScreen(
 
                 }
             }
-
+//            if (viewModel.movieList.value == null && !state.isLoading && state.error.isNotBlank()) {
+//                Box(modifier = Modifier.fillMaxSize()) {
+//                    Text(text = "No Results Found", modifier = Modifier.align(Alignment.Center))
+//                }
+//            }
             if (state.error.isNotBlank()) {
                 Text(
                     text = state.error,

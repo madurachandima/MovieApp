@@ -69,8 +69,11 @@ fun searchTextField(
                 enabled = true,
                 onValueChange = {
                     searchTextValue = it
-//                    onTextChange(it)
+                    (it == null || it == "")
+                    onSearch(searchTextValue)
                 },
+
+
                 leadingIcon = {
                     Icon(
                         Icons.Rounded.Search, contentDescription = "null",

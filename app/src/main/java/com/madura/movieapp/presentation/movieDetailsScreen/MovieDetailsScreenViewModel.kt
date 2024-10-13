@@ -9,8 +9,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.madura.movieapp.common.Constants
 import com.madura.movieapp.common.Resource
+import com.madura.movieapp.data.dto.movieDbDto.FavoriteMovieDto
+import com.madura.movieapp.data.dto.movieDetailsDto.Movie
 import com.madura.movieapp.domain.use_case.get_movieDetails.GetMovieDetailsUseCase
 import com.madura.movieapp.domain.use_case.get_movie_suggestions.GetMovieSuggestionsUseCase
+import com.madura.movieapp.domain.use_case.insert_to_favorite_movie.InsertToFavoriteMovieUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -21,6 +24,7 @@ class MovieDetailsScreenViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val getMovieDetailsUseCase: GetMovieDetailsUseCase,
     private val getMovieSuggestionsUseCase: GetMovieSuggestionsUseCase,
+    private val insertToFavoriteMovieUseCase: InsertToFavoriteMovieUseCase,
 ) : ViewModel() {
     private val TAG = "MovieDetailsScreenViewModel"
 
@@ -102,5 +106,36 @@ class MovieDetailsScreenViewModel @Inject constructor(
         }.launchIn(viewModelScope)
     }
 
+     fun insertToFavoriteMovie(movie: FavoriteMovieDto) {
+        insertToFavoriteMovieUseCase(movie = movie).onEach { result ->
+            when (result) {
+                is Resource.Success -> {
+                    try {
+                        Log.d(TAG, "movie suggestion --->>${result.data.toString()}")
+                        InsertToFavoriteState(id = result.data)
+
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        InsertToFavoriteState(
+                            error = result.message ?: "An unexpected error occurred"
+                        )
+                    }
+
+                }
+
+                is Resource.Error -> {
+                    InsertToFavoriteState(
+                        error = result.message ?: "An unexpected error occurred"
+                    )
+                }
+
+                is Resource.Loading -> {
+                    InsertToFavoriteState(
+                        isLoading = true
+                    )
+                }
+            }
+        }.launchIn(viewModelScope)
+    }
 
 }

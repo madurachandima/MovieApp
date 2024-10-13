@@ -33,6 +33,13 @@ class MovieSearchScreenViewModel @Inject constructor(
         movieList.value.clear()
     }
 
+    fun clearSearchValues() {
+        if (movieList.value != null)
+            movieList.value.clear()
+        query = ""
+        Log.d(TAG, "data cleared ------>>>>>>")
+    }
+
     fun getMovies(
         sortBy: String? = null,
         genre: String? = null,
@@ -42,8 +49,11 @@ class MovieSearchScreenViewModel @Inject constructor(
 
         this.query = query
         if (resetPage) {
-            movieList.value.clear()
-            page = 1
+            if (movieList.value != null && movieList.value.isNotEmpty()) {
+                movieList.value.clear()
+                page = 1
+            }
+
         }
 
         getMoveUseCase(
@@ -57,12 +67,14 @@ class MovieSearchScreenViewModel @Inject constructor(
                     try {
                         val movie = result.data
                         if (resetPage) movieList.value =
-                            movie!!.data!!.movies else movieList.value.addAll(movie!!.data!!.movies)
-                        Log.d(TAG, "movie list ---------> ${movieList.value.size}")
-                        _state.value = MovieListState(movies = movieList.value)
-                        page++
+                            movie!!.data!!.movies else movieList.value.addAll(if (movie!!.data!!.movies == null) movie!!.data!!.movies else arrayListOf())
+                        // Log.d(TAG, "movie list ---------> ${movieList.value.size}")
+                        _state.value =
+                            MovieListState(movies = if (movieList.value != null) movieList.value else arrayListOf())
+                        if (movieList.value != null && movieList.value.isNotEmpty()) page++
 
                     } catch (e: Exception) {
+                        Log.d(TAG, "getMovies: ${e.message}")
                         _state.value =
                             MovieListState(error = result.message ?: "An unexpected error occurred")
 
@@ -79,7 +91,7 @@ class MovieSearchScreenViewModel @Inject constructor(
                 is Resource.Loading -> {
                     _state.value = MovieListState(
                         isLoading = if (resetPage) true else movieList.value.isEmpty(),
-                        isPaginationLoading = movieList.value.isNotEmpty()
+                        isPaginationLoading = if (movieList.value == null) false else movieList.value.isNotEmpty()
                     )
 
                 }

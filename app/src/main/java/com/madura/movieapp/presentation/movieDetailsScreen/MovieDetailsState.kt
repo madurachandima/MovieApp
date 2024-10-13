@@ -8,3 +8,11 @@ data class MovieDetailsState(
     val movieDetails: Movie? = null,
     val error: String = "",
 )
+
+data class InsertToFavoriteState(
+    val isLoading: Boolean = false,
+    val id: Long? = null,
+    val error: String = "",
+)
+
+

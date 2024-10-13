@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("kotlin-kapt")
     id("dagger.hilt.android.plugin")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -54,6 +55,7 @@ android {
 
 dependencies {
     val room_version = "2.6.1"
+    val lifecycle_version = "2.4.0"
 
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
@@ -101,12 +103,18 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.5.0")
 
 
+    implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
 
-    implementation("androidx.room:room-runtime:$room_version")
+
+    implementation ("androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version")
+
+    // Room
+    implementation("androidx.room:room-ktx:$room_version")
     annotationProcessor("androidx.room:room-compiler:$room_version")
-
-    // To use Kotlin annotation processing tool (kapt)
     kapt("androidx.room:room-compiler:$room_version")
-    // To use Kotlin Symbol Processing (KSP)
+    testImplementation("androidx.room:room-testing:$room_version")
+    androidTestImplementation("androidx.room:room-testing:$room_version")
+
+
 
 }

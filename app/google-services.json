@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "964470016767",
+    "project_id": "movie-app-b0c56",
+    "storage_bucket": "movie-app-b0c56.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:964470016767:android:4d9ad88aa20d9f6f8e5aca",
+        "android_client_info": {
+          "package_name": "com.madura.movieapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDnbvkxtstMySJBDpMQ6CFfwUE4anZBxSM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
