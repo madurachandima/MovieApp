@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.rounded.AddCircle
+import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -57,6 +58,7 @@ import com.madura.movieapp.R
 import com.madura.movieapp.common.ExpandedText
 import com.madura.movieapp.data.dto.movieDbDto.FavoriteMovieDto
 import com.madura.movieapp.data.dto.movieDetailsDto.Cast
+import com.madura.movieapp.data.dto.movieListDto.Movie
 import com.madura.movieapp.presentation.Screen
 import com.madura.movieapp.presentation.composible.MovieItem
 import com.madura.movieapp.presentation.theme.red
@@ -74,14 +76,9 @@ fun MovieDetailsScreen(
 
     val state = viewModel.movieDetailsState.value
     val suggestionState = viewModel.movieSuggestionState.value
+    val addFavoriteMovieState = viewModel.insertToFavoriteMovie.value
 
-    val coroutineScope = rememberCoroutineScope()
 
-    fun fromMinutesToHHmm(minutes: Int): String {
-        val hours = TimeUnit.MINUTES.toHours(minutes.toLong())
-        val remainMinutes = minutes - TimeUnit.HOURS.toMinutes(hours)
-        return String.format("%02d:%02d", hours, remainMinutes)
-    }
 
 
     Box(
@@ -104,140 +101,98 @@ fun MovieDetailsScreen(
                         .fillMaxSize()
                         .padding(contentPadding)
                 ) {
-                    if (state.movieDetails != null && suggestionState.suggestions.isNotEmpty())
+
                         LazyColumn(
                             modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 8.dp),
                             state = rememberLazyListState()
                         ) {
-                            item {
-                                Row(modifier = Modifier.fillMaxWidth()) {
-                                    Box(
-                                        contentAlignment = Alignment.Center,
-                                        modifier = Modifier
-                                            .width(180.dp)
-                                            .height(280.dp)
-                                            .clip(shape = RoundedCornerShape(20.dp))
-                                    ) {
-                                        MovieItem(
-                                            url = state.movieDetails.medium_cover_image
-                                                ?: state.movieDetails.background_image ?: "",
-                                            modifier = Modifier,
-                                            radius = 20.dp
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.width(15.dp))
-                                    Column(
-                                        horizontalAlignment = Alignment.Start,
-                                        modifier = Modifier.padding(top = 20.dp)
-                                    ) {
-                                        Text(
-                                            text = state.movieDetails.title_english ?: "_",
-                                            style = MaterialTheme.typography.headlineLarge,
-                                            fontSize = 22.sp,
-                                            color = white,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                        Spacer(modifier = Modifier.height(10.dp))
-                                        Row(
-                                            horizontalArrangement = Arrangement.Start,
-                                            verticalAlignment = Alignment.CenterVertically,
-
-                                            ) {
-                                            Image(
-                                                painter = painterResource(id = R.drawable.star),
-                                                contentDescription = null,
-                                                modifier = Modifier
-                                                    .height(15.dp)
-                                                    .width(15.dp)
-                                            )
-                                            Text(
-                                                text = if (state.movieDetails.rating == null) "_" else state.movieDetails.rating.toString(),
-                                                fontSize = 16.sp,
-                                                color = white,
-                                                fontWeight = FontWeight.Normal,
-                                                modifier = Modifier.padding(horizontal = 2.dp)
-                                            )
-                                            Image(
-                                                painter = painterResource(id = R.drawable.imdb),
-                                                contentDescription = null,
-                                                modifier = Modifier
-                                                    .height(25.dp)
-
+                            if (state.movieDetails != null) {
+                                item {
+                                    Row(modifier = Modifier.fillMaxWidth()) {
+                                        Box(
+                                            contentAlignment = Alignment.Center,
+                                            modifier = Modifier
+                                                .width(180.dp)
+                                                .height(280.dp)
+                                                .clip(shape = RoundedCornerShape(20.dp))
+                                        ) {
+                                            MovieItem(
+                                                url = state.movieDetails.medium_cover_image
+                                                    ?: state.movieDetails.background_image ?: "",
+                                                modifier = Modifier,
+                                                radius = 20.dp
                                             )
                                         }
-
-                                        Spacer(modifier = Modifier.height(10.dp))
-                                        Row {
+                                        Spacer(modifier = Modifier.width(15.dp))
+                                        Column(
+                                            horizontalAlignment = Alignment.Start,
+                                            modifier = Modifier.padding(top = 20.dp)
+                                        ) {
                                             Text(
-                                                text = if (state.movieDetails.year == null) "_" else state.movieDetails.year.toString(),
-                                                fontSize = 14.sp,
+                                                text = state.movieDetails.title_english ?: "_",
+                                                style = MaterialTheme.typography.headlineLarge,
+                                                fontSize = 22.sp,
                                                 color = white,
-                                                fontWeight = FontWeight.W500,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                            Spacer(modifier = Modifier.height(10.dp))
+                                            Row(
+                                                horizontalArrangement = Arrangement.Start,
+                                                verticalAlignment = Alignment.CenterVertically,
 
+                                                ) {
+                                                Image(
+                                                    painter = painterResource(id = R.drawable.star),
+                                                    contentDescription = null,
+                                                    modifier = Modifier
+                                                        .height(15.dp)
+                                                        .width(15.dp)
                                                 )
-                                            Text(
-                                                text = "|",
-                                                fontSize = 14.sp,
-                                                color = white,
-                                                fontWeight = FontWeight.W500,
-                                                modifier = Modifier.padding(horizontal = 2.dp),
-
-                                                )
-
-                                            if (state.movieDetails.runtime == null)
                                                 Text(
-                                                    text = "_",
+                                                    text = if (state.movieDetails.rating == null) "_" else state.movieDetails.rating.toString(),
+                                                    fontSize = 16.sp,
+                                                    color = white,
+                                                    fontWeight = FontWeight.Normal,
+                                                    modifier = Modifier.padding(horizontal = 2.dp)
+                                                )
+                                                Image(
+                                                    painter = painterResource(id = R.drawable.imdb),
+                                                    contentDescription = null,
+                                                    modifier = Modifier
+                                                        .height(25.dp)
+
+                                                )
+                                            }
+
+                                            Spacer(modifier = Modifier.height(10.dp))
+                                            Row {
+                                                Text(
+                                                    text = if (state.movieDetails.year == null) "_" else state.movieDetails.year.toString(),
                                                     fontSize = 14.sp,
                                                     color = white,
                                                     fontWeight = FontWeight.W500,
-                                                )
-                                            else
-                                                if (state.movieDetails.runtime != null)
+
+                                                    )
+                                                Text(
+                                                    text = "|",
+                                                    fontSize = 14.sp,
+                                                    color = white,
+                                                    fontWeight = FontWeight.W500,
+                                                    modifier = Modifier.padding(horizontal = 2.dp),
+
+                                                    )
+
+                                                if (state.movieDetails.runtime == null)
                                                     Text(
-                                                        text = "${
-                                                            fromMinutesToHHmm(state.movieDetails.runtime!!).split(
-                                                                ":"
-                                                            )
-                                                                .first()
-                                                        }h  ${
-                                                            fromMinutesToHHmm(state.movieDetails.runtime!!).split(
-                                                                ":"
-                                                            )
-                                                                .last()
-                                                        }min",
+                                                        text = "_",
                                                         fontSize = 14.sp,
                                                         color = white,
                                                         fontWeight = FontWeight.W500,
                                                     )
-                                                else Text("")
-                                        }
-
-                                        Row(
-                                            modifier = Modifier,
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            IconButton(
-                                                onClick = {
-
-
-                                                    var favoriteMovieDto = FavoriteMovieDto(
-                                                        movieId = state.movieDetails.id!!,
-                                                        backgroundImage = state.movieDetails.medium_cover_image
-                                                            ?: "",
-                                                        backgroundImageOriginal = state.movieDetails.background_image_original
-                                                            ?: "",
-                                                        slug = state.movieDetails.slug ?: "",
-                                                        smallCoverImage = state.movieDetails.small_cover_image
-                                                            ?: "",
-                                                        title = state.movieDetails.title ?: "",
-                                                        titleEnglish = state.movieDetails.title_english
-                                                            ?: "",
-                                                        titleLong = state.movieDetails.title_long
-                                                            ?: "",
-                                                        rating = if (state.movieDetails.rating == null) "_" else state.movieDetails.rating.toString(),
-                                                        year = if (state.movieDetails.year == null) "_" else state.movieDetails.year.toString(),
-                                                        runtime = if (state.movieDetails.runtime != null)
-                                                            "${
+                                                else
+                                                    if (state.movieDetails.runtime != null)
+                                                        Text(
+                                                            text = "${
                                                                 fromMinutesToHHmm(state.movieDetails.runtime!!).split(
                                                                     ":"
                                                                 )
@@ -247,98 +202,119 @@ fun MovieDetailsScreen(
                                                                     ":"
                                                                 )
                                                                     .last()
-                                                            }min" else "_",
-                                                        isWatched = false,
-                                                        isFavorite = true,
-
+                                                            }min",
+                                                            fontSize = 14.sp,
+                                                            color = white,
+                                                            fontWeight = FontWeight.W500,
                                                         )
-
-                                                    coroutineScope.launch {
-                                                        viewModel.insertToFavoriteMovie(
-                                                            favoriteMovieDto
-                                                        )
-                                                    }
-
-
-                                                }) {
-                                                Icon(
-                                                    imageVector = Icons.Rounded.FavoriteBorder,
-                                                    contentDescription = null
-                                                )
+                                                    else Text("")
                                             }
-                                            IconButton(
-                                                onClick = {
 
-                                                }) {
-                                                Icon(
-                                                    imageVector = Icons.Rounded.AddCircle,
-                                                    contentDescription = null
-                                                )
+                                            Row(
+                                                modifier = Modifier,
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                IconButton(
+                                                    onClick = {
+
+                                                        val favoriteMovieDto =
+                                                            addFavoriteMovie(movieDetails = state.movieDetails)
+
+
+                                                            viewModel.insertToFavoriteMovie(
+                                                                favoriteMovieDto
+                                                            )
+
+
+
+                                                    }) {
+                                                    Icon(
+                                                        imageVector = if (state.movieDetails.isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                                                        contentDescription = null,
+                                                        tint = if (state.movieDetails.isFavorite) Color.Red else Color.White,
+                                                    )
+                                                }
+                                                IconButton(
+                                                    onClick = {
+
+                                                    }) {
+                                                    Icon(
+                                                        imageVector = Icons.Rounded.AddCircle,
+                                                        contentDescription = null
+                                                    )
+                                                }
                                             }
+
                                         }
 
                                     }
-
                                 }
-                            }
 
-                            item {
-                                if (state.movieDetails.description_intro == null)
-                                    Text(
-                                        text = "_",
-                                        fontSize = 14.sp,
-                                        color = white,
-                                        fontWeight = FontWeight.W500,
-                                    )
-                                else if (state.movieDetails.description_intro!!.length < 499)
-                                    Text(
-                                        text = state.movieDetails.description_intro!!,
-                                        fontSize = 14.sp,
-                                        color = white,
-                                        fontWeight = FontWeight.W500,
-                                    )
-                                else
-                                    ExpandedText(
-                                        text = state.movieDetails.description_intro!!.substring(
-                                            0,
-                                            500
-                                        ),
-                                        expandedText = state.movieDetails.description_intro!!,
-                                        expandedTextButton = "See more",
-                                        shrinkTextButton = "Less",
-                                        textStyle = TextStyle(
-                                            fontSize = 16.sp,
-                                            color = white,
-                                            fontWeight = FontWeight.Normal,
-                                        ),
-                                        expandedTextStyle = TextStyle(
-                                            fontSize = 16.sp,
-                                            color = white, fontWeight = FontWeight.Normal,
-                                        ),
-                                        expandedTextButtonStyle = TextStyle(
-                                            fontSize = 16.sp,
-                                            color = red, fontWeight = FontWeight.Normal,
-                                        ),
-                                        shrinkTextButtonStyle = TextStyle(
-                                            fontSize = 16.sp,
-                                            color = red, fontWeight = FontWeight.Normal,
-                                        )
-                                    )
-                            }
-
-                            if (state.movieDetails.cast != null)
                                 item {
-                                    LazyRow(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(top = 20.dp)
-                                    ) {
-                                        items(state.movieDetails.cast!!) { cast ->
-                                            ActorCard(cast)
-                                        }
-
-                                    }
+                                    if (state.movieDetails?.description_intro == null)
+                                        Text(
+                                            text = "_",
+                                            fontSize = 14.sp,
+                                            color = white,
+                                            fontWeight = FontWeight.W500,
+                                        )
+                                    else if (state.movieDetails.description_intro!!.length < 499)
+                                        Text(
+                                            text = state.movieDetails.description_intro!!,
+                                            fontSize = 14.sp,
+                                            color = white,
+                                            fontWeight = FontWeight.W500,
+                                        )
+                                    else
+                                        ExpandedText(
+                                            text = state.movieDetails.description_intro!!.substring(
+                                                0,
+                                                500
+                                            ),
+                                            expandedText = state.movieDetails.description_intro!!,
+                                            expandedTextButton = "See more",
+                                            shrinkTextButton = "Less",
+                                            textStyle = TextStyle(
+                                                fontSize = 16.sp,
+                                                color = white,
+                                                fontWeight = FontWeight.Normal,
+                                            ),
+                                            expandedTextStyle = TextStyle(
+                                                fontSize = 16.sp,
+                                                color = white, fontWeight = FontWeight.Normal,
+                                            ),
+                                            expandedTextButtonStyle = TextStyle(
+                                                fontSize = 16.sp,
+                                                color = red, fontWeight = FontWeight.Normal,
+                                            ),
+                                            shrinkTextButtonStyle = TextStyle(
+                                                fontSize = 16.sp,
+                                                color = red, fontWeight = FontWeight.Normal,
+                                            )
+                                        )
                                 }
+
+                                if (state.movieDetails.cast != null)
+                                    item {
+                                        LazyRow(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(top = 20.dp)
+                                        ) {
+                                            items(state.movieDetails.cast!!) { cast ->
+                                                ActorCard(cast)
+                                            }
+
+                                        }
+                                    }
+                            } else {
+                                item {
+                                    Text(
+                                        text = "Movie data details not found ",
+                                        color = Color.White
+                                    )
+                                }
+                            }
 
                             item {
                                 Text(
@@ -354,19 +330,30 @@ fun MovieDetailsScreen(
                                     color = white, fontWeight = FontWeight.SemiBold
                                 )
                             }
-                            item {
-                                LazyRow(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(180.dp),
-                                ) {
-                                    items(suggestionState.suggestions) { movie ->
-                                        MovieItem(
-                                            url = movie.medium_cover_image,
-                                            modifier = Modifier.clickable {
-                                                navController.navigate(Screen.MovieDetailsScreen.route + "/${movie.id}")
-                                            })
+                            if (!suggestionState.suggestions.isNullOrEmpty()) {
+
+
+                                item {
+                                    LazyRow(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(180.dp),
+                                    ) {
+                                        items(suggestionState.suggestions) { movie ->
+                                            MovieItem(
+                                                url = movie.medium_cover_image,
+                                                modifier = Modifier.clickable {
+                                                    navController.navigate(Screen.MovieDetailsScreen.route + "/${movie.id}")
+                                                })
+                                        }
                                     }
+                                }
+                            } else {
+                                item {
+                                    Text(
+                                        text = "Movie suggestions not found ",
+                                        color = Color.White
+                                    )
                                 }
                             }
                         }
@@ -392,8 +379,6 @@ fun MovieDetailsScreen(
             }
         )
     }
-
-
 }
 
 @Composable
@@ -425,4 +410,47 @@ fun ActorCard(cast: Cast) {
             )
         }
     }
+}
+
+private fun addFavoriteMovie(movieDetails: com.madura.movieapp.data.dto.movieDetailsDto.Movie): FavoriteMovieDto {
+
+    return FavoriteMovieDto(
+        movieId = movieDetails.id!!,
+        backgroundImage = movieDetails.medium_cover_image
+            ?: "",
+        backgroundImageOriginal = movieDetails.background_image_original
+            ?: "",
+        slug = movieDetails.slug ?: "",
+        smallCoverImage = movieDetails.small_cover_image
+            ?: "",
+        title = movieDetails.title ?: "",
+        titleEnglish = movieDetails.title_english
+            ?: "",
+        titleLong = movieDetails.title_long
+            ?: "",
+        rating = if (movieDetails.rating == null) "_" else movieDetails.rating.toString(),
+        year = if (movieDetails.year == null) "_" else movieDetails.year.toString(),
+        runtime = if (movieDetails.runtime != null)
+            "${
+                fromMinutesToHHmm(movieDetails.runtime!!).split(
+                    ":"
+                )
+                    .first()
+            }h  ${
+                fromMinutesToHHmm(movieDetails.runtime!!).split(
+                    ":"
+                )
+                    .last()
+            }min" else "_",
+        isWatched = false,
+        isFavorite = true,
+
+        )
+}
+
+
+private fun fromMinutesToHHmm(minutes: Int): String {
+    val hours = TimeUnit.MINUTES.toHours(minutes.toLong())
+    val remainMinutes = minutes - TimeUnit.HOURS.toMinutes(hours)
+    return String.format("%02d:%02d", hours, remainMinutes)
 }

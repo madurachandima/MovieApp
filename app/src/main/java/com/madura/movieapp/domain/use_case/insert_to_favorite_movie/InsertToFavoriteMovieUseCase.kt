@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class InsertToFavoriteMovieUseCase @Inject constructor(
-    val movieLocalRepositoryImpl: MovieLocalRepositoryImpl,
+    private val movieLocalRepositoryImpl: MovieLocalRepositoryImpl,
 ) {
     val TAG = "InsertToFavoriteMovieUseCase"
 

@@ -16,4 +16,7 @@ interface MovieDbDao {
 
     @Query("SELECT * FROM FavoriteMovieDto")
     fun getAllFavoriteMovie(): Flow<List<FavoriteMovieDto>>
+
+    @Query("DELETE FROM FavoriteMovieDto WHERE movieId = :movieId")
+    suspend fun removeFavoriteMovie(movieId: Int): Int
 }

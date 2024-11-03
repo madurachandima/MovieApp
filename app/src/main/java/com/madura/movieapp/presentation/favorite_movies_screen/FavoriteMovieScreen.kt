@@ -2,6 +2,7 @@ package com.madura.movieapp.presentation.favorite_movies_screen
 
 import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,18 +17,31 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AddCircle
+import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,6 +50,7 @@ import androidx.navigation.NavController
 import com.madura.movieapp.R
 import com.madura.movieapp.data.dto.movieDbDto.FavoriteMovieDto
 import com.madura.movieapp.presentation.composible.MovieItem
+import com.madura.movieapp.presentation.theme.darkPurple
 import com.madura.movieapp.presentation.theme.white
 import kotlinx.coroutines.launch
 
@@ -48,20 +63,62 @@ fun FavoriteMovieScreen(
     val TAG = "FavoriteMovieScreen"
 
     val state = viewModel.state.value
+    val removeMovieState = viewModel.removeMovieState.value
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var snackbarState by remember { mutableStateOf(false) }
+
+
+    LaunchedEffect(removeMovieState) {
+        Log.d(TAG, "FavoriteMovieScreen: LaunchedEffect LaunchedEffect ${removeMovieState.movieId}")
+        if (removeMovieState.movieId != null && removeMovieState.movieId > 0) {
+            snackbarState = true
+        }
+    }
+
+    LaunchedEffect(snackbarState) {
+        if (snackbarState) {
+            Log.d(TAG, "FavoriteMovieScreen: LaunchedEffect snackbarState $snackbarState")
+            snackbarHostState.showSnackbar(
+                message = "Movie removed from favorites",
+                duration = SnackbarDuration.Short
+            )
+            snackbarState = false
+        }
+    }
 
 
     Log.d(TAG, "FavoriteMovieScreen: ")
-    Scaffold(modifier = Modifier.fillMaxSize()) { contentPadding ->
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        snackbarHost = {
+            SnackbarHost(snackbarHostState)
+        }
+
+    )
+    { contentPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(contentPadding)
         ) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-            ) {
-                if (state.movies != null) {
+            if (state.isLoading || removeMovieState.isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            } else if (state.movies.isNullOrEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .align(alignment = Alignment.Center),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(text = "No movies found", color = white, textAlign = TextAlign.Center)
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                ) {
+
                     items(count = state.movies.size) {
 
                         val movie = state.movies[it]
@@ -106,7 +163,7 @@ fun FavoriteMovieScreen(
                                             .width(15.dp)
                                     )
                                     Text(
-                                        text = "8.9",
+                                        text = movie.rating,
                                         fontSize = 16.sp,
                                         color = white,
                                         fontWeight = FontWeight.Normal,
@@ -124,7 +181,7 @@ fun FavoriteMovieScreen(
                                 Spacer(modifier = Modifier.height(10.dp))
                                 Row {
                                     Text(
-                                        text = "2001",
+                                        text = movie.year,
                                         fontSize = 14.sp,
                                         color = white,
                                         fontWeight = FontWeight.W500,
@@ -141,7 +198,7 @@ fun FavoriteMovieScreen(
 
 
                                     Text(
-                                        text = "30h",
+                                        text = movie.runtime,
                                         fontSize = 14.sp,
                                         color = white,
                                         fontWeight = FontWeight.W500,
@@ -155,38 +212,18 @@ fun FavoriteMovieScreen(
                                 ) {
                                     IconButton(
                                         onClick = {
+                                            Log.d(TAG, "FavoriteMovieScreen: remove movie call")
 
-//
-//                        var favoriteMovieDto = FavoriteMovieDto(
-//                            movieId = state.movieDetails.id!!,
-//                            backgroundImage = state.movieDetails.medium_cover_image
-//                                ?: "",
-//                            backgroundImageOriginal = state.movieDetails.background_image_original
-//                                ?: "",
-//                            slug = state.movieDetails.slug ?: "",
-//                            smallCoverImage = state.movieDetails.small_cover_image
-//                                ?: "",
-//                            title = state.movieDetails.title ?: "",
-//                            titleEnglish = state.movieDetails.title_english
-//                                ?: "",
-//                            titleLong = state.movieDetails.title_long
-//                                ?: "",
-//                            isWatched = false,
-//                            isFavorite = true,
-//
-//                            )
-
-//                        coroutineScope.launch {
-//                            viewModel.insertToFavoriteMovie(
-//                                favoriteMovieDto
-//                            )
-//                        }
+                                            coroutineScope.launch {
+                                                viewModel.removeFavoriteMovie(movie.movieId)
+                                            }
 
 
                                         }) {
                                         Icon(
-                                            imageVector = Icons.Rounded.FavoriteBorder,
-                                            contentDescription = null
+                                            imageVector = Icons.Rounded.Favorite,
+                                            contentDescription = null,
+                                            tint = Color.Red
                                         )
                                     }
                                     IconButton(
@@ -204,10 +241,11 @@ fun FavoriteMovieScreen(
 
                         }
                     }
+
+
                 }
-
-
             }
+
         }
     }
 }
