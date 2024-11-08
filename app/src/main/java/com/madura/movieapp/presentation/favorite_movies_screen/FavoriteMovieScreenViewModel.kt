@@ -28,12 +28,7 @@ class FavoriteMovieScreenViewModel @Inject constructor(
 
     val TAG = "FavoriteMovieScreenViewModel"
 
-    init {
-        Log.d(TAG, "call FavoriteMovieScreenViewModel init")
-        getFavoriteMovies()
-    }
-
-    private fun getFavoriteMovies() {
+     fun getFavoriteMovies() {
 
         try {
             getFavoriteMovieUseCase().onEach { result ->

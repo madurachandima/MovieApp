@@ -172,17 +172,17 @@ class MovieDetailsScreenViewModel @Inject constructor(
                                     )
 
                                 )
-
+                                _insertToFavoriteState.value =
+                                    InsertToFavoriteState(id = result.data)
                                 Log.d(
                                     TAG,
                                     "insertToFavoriteMovie: ${_movieDetailsState.value.movieDetails!!.isFavorite}"
                                 )
                             }
-                            InsertToFavoriteState(id = result.data)
 
                         } catch (e: Exception) {
                             e.printStackTrace()
-                            InsertToFavoriteState(
+                            _insertToFavoriteState.value = InsertToFavoriteState(
                                 error = result.message ?: "An unexpected error occurred"
                             )
                         }
@@ -190,13 +190,13 @@ class MovieDetailsScreenViewModel @Inject constructor(
                     }
 
                     is Resource.Error -> {
-                        InsertToFavoriteState(
+                        _insertToFavoriteState.value = InsertToFavoriteState(
                             error = result.message ?: "An unexpected error occurred"
                         )
                     }
 
                     is Resource.Loading -> {
-                        InsertToFavoriteState(
+                        _insertToFavoriteState.value = InsertToFavoriteState(
                             isLoading = true
                         )
                     }
@@ -223,9 +223,18 @@ class MovieDetailsScreenViewModel @Inject constructor(
                                 val removeMovieResult =
                                     result.data
                                 Log.d(TAG, "removeFavoriteMovie result: $removeMovieResult")
-                                if (removeMovieResult !=null && removeMovieResult > 0) {
+                                if (removeMovieResult != null && removeMovieResult > 0) {
 
+                                    _movieDetailsState.value = _movieDetailsState.value.copy(
+                                        movieDetails = _movieDetailsState.value.movieDetails!!.copy(
+                                            isFavorite = false
+                                        )
 
+                                    )
+
+                                    _removeMovieState.value = RemoveFavoriteMovieState(
+                                        movieId = movieId
+                                    )
 
 
                                 }
@@ -251,6 +260,9 @@ class MovieDetailsScreenViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+                _removeMovieState.value = RemoveFavoriteMovieState(
+                    error = "An unexpected error occurred"
+                )
             }
         }
     }

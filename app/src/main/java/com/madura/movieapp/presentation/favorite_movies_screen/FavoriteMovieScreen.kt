@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -67,26 +68,35 @@ fun FavoriteMovieScreen(
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var snackbarState by remember { mutableStateOf(false) }
-
+    var snackBarMessage by remember { mutableStateOf("") }
+    var snackBarColor by remember { mutableStateOf(Color.Green) }
 
     LaunchedEffect(removeMovieState) {
-        Log.d(TAG, "FavoriteMovieScreen: LaunchedEffect LaunchedEffect ${removeMovieState.movieId}")
         if (removeMovieState.movieId != null && removeMovieState.movieId > 0) {
             snackbarState = true
+            snackBarMessage = "Movie removed from favorites"
+            snackBarColor = Color.Green
+        }
+        if (removeMovieState.error.isNotBlank()) {
+            snackbarState = true
+            snackBarMessage = removeMovieState.error
+            snackBarColor = Color.Red
         }
     }
 
     LaunchedEffect(snackbarState) {
         if (snackbarState) {
-            Log.d(TAG, "FavoriteMovieScreen: LaunchedEffect snackbarState $snackbarState")
             snackbarHostState.showSnackbar(
-                message = "Movie removed from favorites",
+                message = snackBarMessage,
                 duration = SnackbarDuration.Short
             )
             snackbarState = false
         }
     }
 
+    LaunchedEffect(key1 = Unit) {
+        viewModel.getFavoriteMovies()
+    }
 
     Log.d(TAG, "FavoriteMovieScreen: ")
     Scaffold(

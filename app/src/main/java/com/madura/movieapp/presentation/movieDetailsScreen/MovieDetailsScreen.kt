@@ -2,7 +2,9 @@ package com.madura.movieapp.presentation.movieDetailsScreen
 
 import android.graphics.drawable.Icon
 import android.graphics.drawable.PaintDrawable
+import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,10 +36,18 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -76,9 +86,53 @@ fun MovieDetailsScreen(
 
     val state = viewModel.movieDetailsState.value
     val suggestionState = viewModel.movieSuggestionState.value
-    val addFavoriteMovieState = viewModel.insertToFavoriteMovie.value
+    val removeFavoriteState = viewModel.removeMovieState.value
+    val insertToFavoriteState = viewModel.insertToFavoriteState.value
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    var snackbarState by remember { mutableStateOf(false) }
+    var snackBarMessage by remember { mutableStateOf("") }
+    var snackBarColor by remember { mutableStateOf(Color.Green) }
 
+    LaunchedEffect(removeFavoriteState) {
+        if (removeFavoriteState.movieId != null) {
+            snackbarState = true
+            snackBarMessage = "Movie removed from favorites"
+            snackBarColor = Color.Green
+        }
+        if (removeFavoriteState.error.isNotBlank()) {
+            snackbarState = true
+            snackBarMessage = removeFavoriteState.error
+            snackBarColor = Color.Red
+        }
+
+    }
+
+    LaunchedEffect(insertToFavoriteState) {
+        if (insertToFavoriteState.id != null) {
+            snackbarState = true
+            snackBarMessage = "Movie added to favorites"
+            snackBarColor = Color.Green
+        }
+        if (removeFavoriteState.error.isNotBlank()) {
+            snackbarState = true
+            snackBarMessage = removeFavoriteState.error
+            snackBarColor = Color.Red
+        }
+
+    }
+
+    LaunchedEffect(snackbarState) {
+        if (snackbarState) {
+            snackbarHostState.showSnackbar(
+                message = snackBarMessage,
+                duration = SnackbarDuration.Short
+
+            )
+            snackbarState = false
+            snackBarMessage = ""
+        }
+    }
 
 
     Box(
@@ -88,6 +142,9 @@ fun MovieDetailsScreen(
     ) {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
+            snackbarHost = {
+                SnackbarHost(snackbarHostState, modifier = Modifier.background(snackBarColor))
+            },
             topBar = {
                 TopAppBar(title = { Text(text = "") }, navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
@@ -102,261 +159,262 @@ fun MovieDetailsScreen(
                         .padding(contentPadding)
                 ) {
 
-                        LazyColumn(
-                            modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 8.dp),
-                            state = rememberLazyListState()
-                        ) {
-                            if (state.movieDetails != null) {
-                                item {
-                                    Row(modifier = Modifier.fillMaxWidth()) {
-                                        Box(
-                                            contentAlignment = Alignment.Center,
-                                            modifier = Modifier
-                                                .width(180.dp)
-                                                .height(280.dp)
-                                                .clip(shape = RoundedCornerShape(20.dp))
-                                        ) {
-                                            MovieItem(
-                                                url = state.movieDetails.medium_cover_image
-                                                    ?: state.movieDetails.background_image ?: "",
-                                                modifier = Modifier,
-                                                radius = 20.dp
+                    LazyColumn(
+                        modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 8.dp),
+                        state = rememberLazyListState()
+                    ) {
+                        if (state.movieDetails != null) {
+                            item {
+                                Row(modifier = Modifier.fillMaxWidth()) {
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier = Modifier
+                                            .width(180.dp)
+                                            .height(280.dp)
+                                            .clip(shape = RoundedCornerShape(20.dp))
+                                    ) {
+                                        MovieItem(
+                                            url = state.movieDetails.medium_cover_image
+                                                ?: state.movieDetails.background_image ?: "",
+                                            modifier = Modifier,
+                                            radius = 20.dp
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(15.dp))
+                                    Column(
+                                        horizontalAlignment = Alignment.Start,
+                                        modifier = Modifier.padding(top = 20.dp)
+                                    ) {
+                                        Text(
+                                            text = state.movieDetails.title_english ?: "_",
+                                            style = MaterialTheme.typography.headlineLarge,
+                                            fontSize = 22.sp,
+                                            color = white,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Spacer(modifier = Modifier.height(10.dp))
+                                        Row(
+                                            horizontalArrangement = Arrangement.Start,
+                                            verticalAlignment = Alignment.CenterVertically,
+
+                                            ) {
+                                            Image(
+                                                painter = painterResource(id = R.drawable.star),
+                                                contentDescription = null,
+                                                modifier = Modifier
+                                                    .height(15.dp)
+                                                    .width(15.dp)
+                                            )
+                                            Text(
+                                                text = if (state.movieDetails.rating == null) "_" else state.movieDetails.rating.toString(),
+                                                fontSize = 16.sp,
+                                                color = white,
+                                                fontWeight = FontWeight.Normal,
+                                                modifier = Modifier.padding(horizontal = 2.dp)
+                                            )
+                                            Image(
+                                                painter = painterResource(id = R.drawable.imdb),
+                                                contentDescription = null,
+                                                modifier = Modifier
+                                                    .height(25.dp)
+
                                             )
                                         }
-                                        Spacer(modifier = Modifier.width(15.dp))
-                                        Column(
-                                            horizontalAlignment = Alignment.Start,
-                                            modifier = Modifier.padding(top = 20.dp)
-                                        ) {
+
+                                        Spacer(modifier = Modifier.height(10.dp))
+                                        Row {
                                             Text(
-                                                text = state.movieDetails.title_english ?: "_",
-                                                style = MaterialTheme.typography.headlineLarge,
-                                                fontSize = 22.sp,
+                                                text = if (state.movieDetails.year == null) "_" else state.movieDetails.year.toString(),
+                                                fontSize = 14.sp,
                                                 color = white,
-                                                fontWeight = FontWeight.SemiBold
-                                            )
-                                            Spacer(modifier = Modifier.height(10.dp))
-                                            Row(
-                                                horizontalArrangement = Arrangement.Start,
-                                                verticalAlignment = Alignment.CenterVertically,
+                                                fontWeight = FontWeight.W500,
 
-                                                ) {
-                                                Image(
-                                                    painter = painterResource(id = R.drawable.star),
-                                                    contentDescription = null,
-                                                    modifier = Modifier
-                                                        .height(15.dp)
-                                                        .width(15.dp)
                                                 )
+                                            Text(
+                                                text = "|",
+                                                fontSize = 14.sp,
+                                                color = white,
+                                                fontWeight = FontWeight.W500,
+                                                modifier = Modifier.padding(horizontal = 2.dp),
+
+                                                )
+
+                                            if (state.movieDetails.runtime == null)
                                                 Text(
-                                                    text = if (state.movieDetails.rating == null) "_" else state.movieDetails.rating.toString(),
-                                                    fontSize = 16.sp,
-                                                    color = white,
-                                                    fontWeight = FontWeight.Normal,
-                                                    modifier = Modifier.padding(horizontal = 2.dp)
-                                                )
-                                                Image(
-                                                    painter = painterResource(id = R.drawable.imdb),
-                                                    contentDescription = null,
-                                                    modifier = Modifier
-                                                        .height(25.dp)
-
-                                                )
-                                            }
-
-                                            Spacer(modifier = Modifier.height(10.dp))
-                                            Row {
-                                                Text(
-                                                    text = if (state.movieDetails.year == null) "_" else state.movieDetails.year.toString(),
+                                                    text = "_",
                                                     fontSize = 14.sp,
                                                     color = white,
                                                     fontWeight = FontWeight.W500,
-
-                                                    )
-                                                Text(
-                                                    text = "|",
-                                                    fontSize = 14.sp,
-                                                    color = white,
-                                                    fontWeight = FontWeight.W500,
-                                                    modifier = Modifier.padding(horizontal = 2.dp),
-
-                                                    )
-
-                                                if (state.movieDetails.runtime == null)
+                                                )
+                                            else
+                                                if (state.movieDetails.runtime != null)
                                                     Text(
-                                                        text = "_",
+                                                        text = "${
+                                                            fromMinutesToHHmm(state.movieDetails.runtime!!).split(
+                                                                ":"
+                                                            )
+                                                                .first()
+                                                        }h  ${
+                                                            fromMinutesToHHmm(state.movieDetails.runtime!!).split(
+                                                                ":"
+                                                            )
+                                                                .last()
+                                                        }min",
                                                         fontSize = 14.sp,
                                                         color = white,
                                                         fontWeight = FontWeight.W500,
                                                     )
-                                                else
-                                                    if (state.movieDetails.runtime != null)
-                                                        Text(
-                                                            text = "${
-                                                                fromMinutesToHHmm(state.movieDetails.runtime!!).split(
-                                                                    ":"
-                                                                )
-                                                                    .first()
-                                                            }h  ${
-                                                                fromMinutesToHHmm(state.movieDetails.runtime!!).split(
-                                                                    ":"
-                                                                )
-                                                                    .last()
-                                                            }min",
-                                                            fontSize = 14.sp,
-                                                            color = white,
-                                                            fontWeight = FontWeight.W500,
-                                                        )
-                                                    else Text("")
-                                            }
+                                                else Text("")
+                                        }
 
-                                            Row(
-                                                modifier = Modifier,
-                                                horizontalArrangement = Arrangement.SpaceBetween
-                                            ) {
-                                                IconButton(
-                                                    onClick = {
-
+                                        Row(
+                                            modifier = Modifier,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            IconButton(
+                                                onClick = {
+                                                    if (!state.movieDetails.isFavorite) {
                                                         val favoriteMovieDto =
                                                             addFavoriteMovie(movieDetails = state.movieDetails)
 
+                                                        viewModel.insertToFavoriteMovie(
+                                                            favoriteMovieDto
+                                                        )
+                                                    } else {
+                                                        viewModel.removeFavoriteMovie(state.movieDetails.id!!)
+                                                    }
 
-                                                            viewModel.insertToFavoriteMovie(
-                                                                favoriteMovieDto
-                                                            )
 
-
-
-                                                    }) {
-                                                    Icon(
-                                                        imageVector = if (state.movieDetails.isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                                                        contentDescription = null,
-                                                        tint = if (state.movieDetails.isFavorite) Color.Red else Color.White,
-                                                    )
-                                                }
-                                                IconButton(
-                                                    onClick = {
-
-                                                    }) {
-                                                    Icon(
-                                                        imageVector = Icons.Rounded.AddCircle,
-                                                        contentDescription = null
-                                                    )
-                                                }
+                                                }) {
+                                                Icon(
+                                                    imageVector = if (state.movieDetails.isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                                                    contentDescription = null,
+                                                    tint = if (state.movieDetails.isFavorite) Color.Red else Color.White,
+                                                )
                                             }
+                                            IconButton(
+                                                onClick = {
 
+                                                }) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.AddCircle,
+                                                    contentDescription = null
+                                                )
+                                            }
                                         }
 
                                     }
-                                }
 
-                                item {
-                                    if (state.movieDetails?.description_intro == null)
-                                        Text(
-                                            text = "_",
-                                            fontSize = 14.sp,
-                                            color = white,
-                                            fontWeight = FontWeight.W500,
-                                        )
-                                    else if (state.movieDetails.description_intro!!.length < 499)
-                                        Text(
-                                            text = state.movieDetails.description_intro!!,
-                                            fontSize = 14.sp,
-                                            color = white,
-                                            fontWeight = FontWeight.W500,
-                                        )
-                                    else
-                                        ExpandedText(
-                                            text = state.movieDetails.description_intro!!.substring(
-                                                0,
-                                                500
-                                            ),
-                                            expandedText = state.movieDetails.description_intro!!,
-                                            expandedTextButton = "See more",
-                                            shrinkTextButton = "Less",
-                                            textStyle = TextStyle(
-                                                fontSize = 16.sp,
-                                                color = white,
-                                                fontWeight = FontWeight.Normal,
-                                            ),
-                                            expandedTextStyle = TextStyle(
-                                                fontSize = 16.sp,
-                                                color = white, fontWeight = FontWeight.Normal,
-                                            ),
-                                            expandedTextButtonStyle = TextStyle(
-                                                fontSize = 16.sp,
-                                                color = red, fontWeight = FontWeight.Normal,
-                                            ),
-                                            shrinkTextButtonStyle = TextStyle(
-                                                fontSize = 16.sp,
-                                                color = red, fontWeight = FontWeight.Normal,
-                                            )
-                                        )
-                                }
-
-                                if (state.movieDetails.cast != null)
-                                    item {
-                                        LazyRow(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(top = 20.dp)
-                                        ) {
-                                            items(state.movieDetails.cast!!) { cast ->
-                                                ActorCard(cast)
-                                            }
-
-                                        }
-                                    }
-                            } else {
-                                item {
-                                    Text(
-                                        text = "Movie data details not found ",
-                                        color = Color.White
-                                    )
                                 }
                             }
 
                             item {
-                                Text(
-                                    modifier = Modifier.padding(
-                                        top = 10.dp,
-                                        start = 10.dp,
-                                        bottom = 10.dp
-                                    ),
-                                    text = "More Like This",
-                                    textAlign = TextAlign.Left,
-                                    style = MaterialTheme.typography.headlineLarge,
-                                    fontSize = 20.sp,
-                                    color = white, fontWeight = FontWeight.SemiBold
-                                )
+                                if (state.movieDetails?.description_intro == null)
+                                    Text(
+                                        text = "_",
+                                        fontSize = 14.sp,
+                                        color = white,
+                                        fontWeight = FontWeight.W500,
+                                    )
+                                else if (state.movieDetails.description_intro!!.length < 499)
+                                    Text(
+                                        text = state.movieDetails.description_intro!!,
+                                        fontSize = 14.sp,
+                                        color = white,
+                                        fontWeight = FontWeight.W500,
+                                    )
+                                else
+                                    ExpandedText(
+                                        text = state.movieDetails.description_intro!!.substring(
+                                            0,
+                                            500
+                                        ),
+                                        expandedText = state.movieDetails.description_intro!!,
+                                        expandedTextButton = "See more",
+                                        shrinkTextButton = "Less",
+                                        textStyle = TextStyle(
+                                            fontSize = 16.sp,
+                                            color = white,
+                                            fontWeight = FontWeight.Normal,
+                                        ),
+                                        expandedTextStyle = TextStyle(
+                                            fontSize = 16.sp,
+                                            color = white, fontWeight = FontWeight.Normal,
+                                        ),
+                                        expandedTextButtonStyle = TextStyle(
+                                            fontSize = 16.sp,
+                                            color = red, fontWeight = FontWeight.Normal,
+                                        ),
+                                        shrinkTextButtonStyle = TextStyle(
+                                            fontSize = 16.sp,
+                                            color = red, fontWeight = FontWeight.Normal,
+                                        )
+                                    )
                             }
-                            if (!suggestionState.suggestions.isNullOrEmpty()) {
 
-
+                            if (state.movieDetails.cast != null)
                                 item {
                                     LazyRow(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(180.dp),
+                                            .padding(top = 20.dp)
                                     ) {
-                                        items(suggestionState.suggestions) { movie ->
-                                            MovieItem(
-                                                url = movie.medium_cover_image,
-                                                modifier = Modifier.clickable {
-                                                    navController.navigate(Screen.MovieDetailsScreen.route + "/${movie.id}")
-                                                })
+                                        items(state.movieDetails.cast!!) { cast ->
+                                            ActorCard(cast)
                                         }
+
                                     }
                                 }
-                            } else {
-                                item {
-                                    Text(
-                                        text = "Movie suggestions not found ",
-                                        color = Color.White
-                                    )
-                                }
+                        } else {
+                            item {
+                                Text(
+                                    text = "Movie data details not found ",
+                                    color = Color.White
+                                )
                             }
                         }
+
+                        item {
+                            Text(
+                                modifier = Modifier.padding(
+                                    top = 10.dp,
+                                    start = 10.dp,
+                                    bottom = 10.dp
+                                ),
+                                text = "More Like This",
+                                textAlign = TextAlign.Left,
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontSize = 20.sp,
+                                color = white, fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        if (!suggestionState.suggestions.isNullOrEmpty()) {
+
+
+                            item {
+                                LazyRow(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(180.dp),
+                                ) {
+                                    items(suggestionState.suggestions) { movie ->
+                                        MovieItem(
+                                            url = movie.medium_cover_image,
+                                            modifier = Modifier.clickable {
+                                                navController.navigate(Screen.MovieDetailsScreen.route + "/${movie.id}")
+                                            })
+                                    }
+                                }
+                            }
+                        } else {
+                            item {
+                                Text(
+                                    text = "Movie suggestions not found ",
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
 
                     if (state.isLoading) {
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
