@@ -1,4 +1,4 @@
-package com.madura.movieapp.data.dto
+package com.madura.movieapp.data.dto.movieListDto
 
 data class Torrent(
     val audio_channels: String,

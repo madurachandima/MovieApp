@@ -2,7 +2,7 @@ package com.madura.movieapp.domain.use_case.get_movies
 
 import android.util.Log
 import com.madura.movieapp.common.Resource
-import com.madura.movieapp.data.dto.MovieListDto
+import com.madura.movieapp.data.dto.movieListDto.MovieListDto
 import com.madura.movieapp.domain.repository.MovieRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
