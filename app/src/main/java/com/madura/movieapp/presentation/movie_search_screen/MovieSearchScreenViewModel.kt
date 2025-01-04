@@ -2,7 +2,9 @@ package com.madura.movieapp.presentation.movie_search_screen
 
 import android.util.Log
 import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.madura.movieapp.common.Resource
@@ -25,18 +27,19 @@ class MovieSearchScreenViewModel @Inject constructor(
 
     private var page: Int = 1
 
-    var movieList = mutableStateOf<ArrayList<Movie>>(arrayListOf())
+    var movieList by mutableStateOf<ArrayList<Movie>>(arrayListOf())
 
     var query: String = ""
 
     init {
-        movieList.value.clear()
+        movieList.clear()
     }
 
     fun clearSearchValues() {
-        if (movieList.value != null)
-            movieList.value.clear()
-        query = ""
+        if (movieList != null)
+
+            query = ""
+        movieList = arrayListOf()
         Log.d(TAG, "data cleared ------>>>>>>")
     }
 
@@ -49,8 +52,8 @@ class MovieSearchScreenViewModel @Inject constructor(
 
         this.query = query
         if (resetPage) {
-            if (movieList.value != null && movieList.value.isNotEmpty()) {
-                movieList.value.clear()
+            if (movieList != null && movieList.isNotEmpty()) {
+                movieList = arrayListOf()
                 page = 1
             }
 
@@ -66,12 +69,23 @@ class MovieSearchScreenViewModel @Inject constructor(
                 is Resource.Success -> {
                     try {
                         val movie = result.data
-                        if (resetPage) movieList.value =
-                            movie!!.data!!.movies else movieList.value.addAll(if (movie!!.data!!.movies == null) movie!!.data!!.movies else arrayListOf())
-                        // Log.d(TAG, "movie list ---------> ${movieList.value.size}")
+                        if (movie?.data?.movies != null) {
+                            if (resetPage) {
+                                movieList =
+                                    movie.data.movies
+                            } else {
+                                movieList.addAll(
+                                    movie.data.movies
+                                )
+                            }
+                        } else {
+                            movieList = arrayListOf()
+                        }
+
+
                         _state.value =
-                            MovieListState(movies = if (movieList.value != null) movieList.value else arrayListOf())
-                        if (movieList.value != null && movieList.value.isNotEmpty()) page++
+                            MovieListState(movies = if (movieList != null) movieList else arrayListOf())
+                        if (movieList != null && movieList.isNotEmpty()) page++
 
                     } catch (e: Exception) {
                         Log.d(TAG, "getMovies: ${e.message}")
@@ -90,8 +104,8 @@ class MovieSearchScreenViewModel @Inject constructor(
 
                 is Resource.Loading -> {
                     _state.value = MovieListState(
-                        isLoading = if (resetPage) true else movieList.value.isEmpty(),
-                        isPaginationLoading = if (movieList.value == null) false else movieList.value.isNotEmpty()
+                        isLoading = if (resetPage) true else movieList.isEmpty(),
+                        isPaginationLoading = if (movieList == null) false else movieList.isNotEmpty()
                     )
 
                 }

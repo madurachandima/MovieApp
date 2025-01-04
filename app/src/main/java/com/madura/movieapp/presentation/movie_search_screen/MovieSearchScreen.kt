@@ -1,13 +1,17 @@
 package com.madura.movieapp.presentation.movie_search_screen
 
-import android.util.Log
+
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -25,13 +29,15 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.madura.movieapp.R
 import com.madura.movieapp.presentation.Screen
 import com.madura.movieapp.presentation.composible.MovieItem
-import com.madura.movieapp.presentation.composible.searchTextField
+import com.madura.movieapp.presentation.composible.SearchTextField
 import com.madura.movieapp.ui.composable.OnBottomReached
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -42,7 +48,7 @@ fun MovieSearchScreen(
     navController: NavController,
     viewModel: MovieSearchScreenViewModel = hiltViewModel(),
 ) {
-val TAG = "MovieSearchScreen"
+    val TAG = "MovieSearchScreen"
     val state = viewModel.state.value
 
     val gridState = rememberLazyGridState()
@@ -71,13 +77,11 @@ val TAG = "MovieSearchScreen"
                     .fillMaxSize()
                     .padding(start = 8.dp, end = 8.dp, top = 8.dp)
             ) {
-                searchTextField { value ->
+                SearchTextField { value ->
                     searchQuery = value
-                    Log.d(TAG,"------------------>>>>>>>>>>>> $searchQuery")
                     if (searchQuery == "" || searchQuery.isEmpty()) {
                         viewModel.clearSearchValues()
-                        Log.d(TAG,"------------------>>>>>>>>>>>> empty")
-                        return@searchTextField
+                        return@SearchTextField
                     } else {
                         searchJob?.cancel()
                         searchJob = coroutineScope.launch {
@@ -88,13 +92,59 @@ val TAG = "MovieSearchScreen"
 
                 }
 
-                if (viewModel.movieList.value != null && viewModel.movieList.value.isNotEmpty() && !state.isLoading)
+                if (viewModel.movieList.isEmpty() && !state.isLoading && (searchQuery == "" || searchQuery.isEmpty())) {
+
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Column(modifier = Modifier.align(Alignment.Center)) {
+                            Image(
+                                painter = painterResource(id = R.drawable.search_here),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .width(250.dp)
+                                    .height(250.dp)
+
+
+                            )
+                            Spacer(Modifier.height(20.dp))
+                            Text(
+                                "Search here!",
+                                modifier = Modifier.align(Alignment.CenterHorizontally),
+
+                                )
+                        }
+                    }
+                }
+
+                if (viewModel.movieList.isEmpty() && !state.isLoading && (searchQuery != "" || searchQuery.isNotEmpty())) {
+
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Column(modifier = Modifier.align(Alignment.Center)) {
+                            Image(
+                                painter = painterResource(id = R.drawable.no_result_found),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .width(250.dp)
+                                    .height(250.dp)
+
+
+                            )
+                            Spacer(Modifier.height(20.dp))
+                            Text(
+                                "No Results Found!",
+                                modifier = Modifier.align(Alignment.CenterHorizontally),
+
+                                )
+                        }
+                    }
+                }
+
+                if (viewModel.movieList.isNotEmpty() && !state.isLoading)
                     LazyVerticalGrid(
                         state = gridState,
                         columns = GridCells.Adaptive(minSize = 100.dp),
                         contentPadding = PaddingValues(0.dp)
                     ) {
-                        itemsIndexed(viewModel.movieList.value) { index, item ->
+                        itemsIndexed(viewModel.movieList) { index, item ->
                             MovieItem(url = item.medium_cover_image, Modifier.clickable {
                                 navController.navigate(Screen.MovieDetailsScreen.route + "/${item.id}")
                             })
@@ -102,7 +152,7 @@ val TAG = "MovieSearchScreen"
                     }
             }
 
-            if (viewModel.movieList.value != null && viewModel.movieList.value.isNotEmpty()) {
+            if (viewModel.movieList.isNotEmpty()) {
                 gridState.OnBottomReached {
                     coroutineScope.launch {
                         if (searchQuery == "" || searchQuery.isEmpty())
@@ -136,4 +186,30 @@ val TAG = "MovieSearchScreen"
         }
 
     }
+
+
 }
+
+//@Preview(showBackground = true, showSystemUi = true)
+//@Composable
+//private fun NoResultFound() {
+//    Box(modifier = Modifier.fillMaxSize()) {
+//        Column(modifier = Modifier.align(Alignment.Center)) {
+//            Image(
+//                painter = painterResource(id = R.drawable.no_result_found),
+//                contentDescription = null,
+//                modifier = Modifier
+//                    .width(250.dp)
+//                    .height(250.dp)
+//
+//
+//            )
+//            Spacer(Modifier.height(20.dp))
+//            Text(
+//                "No Results Found",
+//                modifier = Modifier.align(Alignment.CenterHorizontally),
+//
+//                )
+//        }
+//    }
+//}
