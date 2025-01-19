@@ -16,7 +16,7 @@ class GetFavoriteMovieUseCase @Inject constructor(
     operator fun invoke(): Flow<Resource<List<FavoriteMovieDto>>> = flow {
         try {
             emit(Resource.Loading<List<FavoriteMovieDto>>())
-            movieLocalRepositoryImpl.getAllFavoriteMovie().collect { favoriteMovies ->
+            movieLocalRepositoryImpl.getAllLocalMovies().collect { favoriteMovies ->
                 emit(Resource.Success<List<FavoriteMovieDto>>(favoriteMovies))
                 Log.d(TAG, "Get all favorite movie invoke favoriteMovies : ${favoriteMovies.size}")
             }

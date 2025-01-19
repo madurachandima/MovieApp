@@ -14,16 +14,16 @@ class InsertToFavoriteMovieUseCase @Inject constructor(
 ) {
     val TAG = "InsertToFavoriteMovieUseCase"
 
-     operator fun invoke(movie: FavoriteMovieDto): Flow<Resource<Long>> = flow {
+    operator fun invoke(movie: FavoriteMovieDto): Flow<Resource<FavoriteMovieDto?>> = flow {
         try {
-            emit(Resource.Loading<Long>())
-            val result = movieLocalRepositoryImpl.addFavoriteMovie(favoriteMovieDto = movie)
+            emit(Resource.Loading<FavoriteMovieDto?>())
+            val result = movieLocalRepositoryImpl.insertAndReturnMovie(favoriteMovieDto = movie)
             Log.d(TAG, "Insert to favorite movie invoke: $result")
-            emit(Resource.Success<Long>(result))
+            emit(Resource.Success<FavoriteMovieDto?>(result))
         } catch (e: Exception) {
             e.printStackTrace()
             emit(
-                Resource.Error<Long>(
+                Resource.Error<FavoriteMovieDto?>(
                     e.localizedMessage ?: "An unexpected error occurred"
                 )
             )

@@ -7,17 +7,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.madura.movieapp.common.Constants
 import com.madura.movieapp.common.Resource
 import com.madura.movieapp.data.dto.movieDbDto.FavoriteMovieDto
 import com.madura.movieapp.data.dto.movieDetailsDto.Movie
-import com.madura.movieapp.domain.use_case.get_favorite_movies.GetFavoriteMovieUseCase
+import com.madura.movieapp.domain.use_case.get_local_movie_by_id.GetLocalMovieByIdUseCase
 import com.madura.movieapp.domain.use_case.get_movieDetails.GetMovieDetailsUseCase
 import com.madura.movieapp.domain.use_case.get_movie_suggestions.GetMovieSuggestionsUseCase
 import com.madura.movieapp.domain.use_case.insert_to_favorite_movie.InsertToFavoriteMovieUseCase
-import com.madura.movieapp.domain.use_case.remove_favorite_movie.RemoveFavoriteMovieUseCase
-import com.madura.movieapp.presentation.favorite_movies_screen.FavoriteMovieListState
-import com.madura.movieapp.presentation.favorite_movies_screen.RemoveFavoriteMovieState
+import com.madura.movieapp.domain.use_case.remove_movie.RemoveMovieUseCase
+import com.madura.movieapp.domain.use_case.update_favorite_movie.UpdateFavoriteMovieStatusUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -30,8 +30,9 @@ class MovieDetailsScreenViewModel @Inject constructor(
     private val getMovieDetailsUseCase: GetMovieDetailsUseCase,
     private val getMovieSuggestionsUseCase: GetMovieSuggestionsUseCase,
     private val insertToFavoriteMovieUseCase: InsertToFavoriteMovieUseCase,
-    private val getFavoriteMovieUseCase: GetFavoriteMovieUseCase,
-    private val removeFavoriteMovieUseCase: RemoveFavoriteMovieUseCase
+    private val getLocalMovieByIdUseCase: GetLocalMovieByIdUseCase,
+    private val removeMovieUseCase: RemoveMovieUseCase,
+    private val updateFavoriteMovieUseCase: UpdateFavoriteMovieStatusUseCase
 ) : ViewModel() {
     private val TAG = "MovieDetailsScreenViewModel"
 
@@ -41,34 +42,36 @@ class MovieDetailsScreenViewModel @Inject constructor(
     private val _movieSuggestionState = mutableStateOf(MovieSuggestionState())
     val movieSuggestionState: State<MovieSuggestionState> = _movieSuggestionState
 
-    private val _removeMovieState = mutableStateOf(RemoveFavoriteMovieState())
-    val removeMovieState: State<RemoveFavoriteMovieState> = _removeMovieState
-
-    private val _insertToFavoriteState = mutableStateOf(InsertToFavoriteState())
-    val insertToFavoriteState: State<InsertToFavoriteState> = _insertToFavoriteState
-
-    var movie: FavoriteMovieDto? = null
+    private var movieDetails: Movie? = null
+    private var localMovieDetails: FavoriteMovieDto? = null
 
     init {
         savedStateHandle.get<String>(Constants.PARAM_MOVIE_ID)?.let { movieId ->
             Log.d(TAG, "movie id --->> $movieId")
-            getFavoriteMovieById(movieId = movieId.toInt())
             getMovieDetailsById(movieId = movieId.toInt())
             getMovieSuggestionById(movieId = movieId.toInt())
         }
     }
 
     private fun getMovieDetailsById(movieId: Int) {
+
+        viewModelScope.launch {
+            localMovieDetails = getLocalFavoriteMovieById(movieId = movieId)
+        }
+
         getMovieDetailsUseCase(movieId = movieId).onEach { result ->
             when (result) {
                 is Resource.Success -> {
                     try {
                         Log.d(TAG, "movie details --->>${result.data!!.data.toString()}")
-                        var movieDetails = result.data.data.movie
-                        movieDetails.isFavorite = movie != null
+                        val movieDetails = result.data.data.movie
+                        if (localMovieDetails != null) {
+                            movieDetails.isFavorite = localMovieDetails!!.isFavorite
+                        }
 
-                        _movieDetailsState.value =
-                            MovieDetailsState(movieDetails = movieDetails);
+                        _movieDetailsState.value = MovieDetailsState(movieDetails = movieDetails)
+
+                        this.movieDetails = movieDetails
 
                     } catch (e: Exception) {
                         Log.e(TAG, "error ->$e")
@@ -125,64 +128,61 @@ class MovieDetailsScreenViewModel @Inject constructor(
         }.launchIn(viewModelScope)
     }
 
-    private fun getFavoriteMovieById(movieId: Int) {
-        try {
-            getFavoriteMovieUseCase().onEach { result ->
+
+    private suspend fun getLocalFavoriteMovieById(movieId: Int): FavoriteMovieDto? {
+        var localMovie: FavoriteMovieDto? = null
+
+        kotlin.runCatching {
+            getLocalMovieByIdUseCase(movieId = movieId).collect { result ->
                 when (result) {
                     is Resource.Success -> {
-                        val movies = result.data
-                        Log.d(TAG, "getFavoriteMovieById: $movies")
-
-                        if (movies.isNullOrEmpty()) return@onEach
-
-                        movies.find { it.movieId == movieId }.let {
-                            movie = it
-                            Log.d(TAG, " found getFavoriteMovieById: $it")
-                            return@onEach
-                        }
+                        localMovie = result.data
+                        Log.d(TAG, "getFavoriteMovieById: $localMovie")
                     }
 
                     is Resource.Error -> {
-                        return@onEach
+                        localMovie = null
+
                     }
 
                     is Resource.Loading -> {
-
+                        _movieDetailsState.value = MovieDetailsState(
+                            isLoading = true
+                        )
                     }
                 }
-            }.launchIn(viewModelScope)
+            }
 
-        } catch (e: Exception) {
-            return
+        }.onFailure {
+            Log.e(TAG, "getLocalFavoriteMovieById: $it")
         }
-        return
+
+        return localMovie
     }
 
-    fun insertToFavoriteMovie(movie: FavoriteMovieDto) {
+    private fun insertToFavoriteMovieToLocal(movie: FavoriteMovieDto) {
         viewModelScope.launch {
             insertToFavoriteMovieUseCase(movie = movie).onEach { result ->
                 when (result) {
                     is Resource.Success -> {
                         try {
-                            Log.d(TAG, "movie suggestion --->>${result.data.toString()}")
-                            if (result.data != null && result.data > 0 && _movieDetailsState.value.movieDetails != null) {
-                                _movieDetailsState.value = _movieDetailsState.value.copy(
-                                    movieDetails = _movieDetailsState.value.movieDetails!!.copy(
-                                        isFavorite = true
-                                    )
+                            if (result.data != null) {
 
+                                _movieDetailsState.value = MovieDetailsState(
+                                    movieDetails = movieDetails!!.copy(isFavorite = true)
                                 )
-                                _insertToFavoriteState.value =
-                                    InsertToFavoriteState(id = result.data)
+                                localMovieDetails = result.data
+
                                 Log.d(
                                     TAG,
                                     "insertToFavoriteMovie: ${_movieDetailsState.value.movieDetails!!.isFavorite}"
                                 )
+
                             }
 
                         } catch (e: Exception) {
                             e.printStackTrace()
-                            _insertToFavoriteState.value = InsertToFavoriteState(
+                            _movieDetailsState.value = MovieDetailsState(
                                 error = result.message ?: "An unexpected error occurred"
                             )
                         }
@@ -190,13 +190,13 @@ class MovieDetailsScreenViewModel @Inject constructor(
                     }
 
                     is Resource.Error -> {
-                        _insertToFavoriteState.value = InsertToFavoriteState(
+                        _movieDetailsState.value = MovieDetailsState(
                             error = result.message ?: "An unexpected error occurred"
                         )
                     }
 
                     is Resource.Loading -> {
-                        _insertToFavoriteState.value = InsertToFavoriteState(
+                        _movieDetailsState.value = MovieDetailsState(
                             isLoading = true
                         )
                     }
@@ -205,43 +205,34 @@ class MovieDetailsScreenViewModel @Inject constructor(
         }
     }
 
-    fun removeFavoriteMovie(movieId: Int) {
+    private fun removeFavoriteMovieFromLocal(movieId: Int) {
         Log.d(TAG, "removeFavoriteMovie: $movieId")
         viewModelScope.launch {
             try {
-                removeFavoriteMovieUseCase(movieId = movieId).collect { result ->
+                removeMovieUseCase(movieId = movieId).collect { result ->
                     when (result) {
                         is Resource.Loading -> {
                             Log.d(TAG, "removeFavoriteMovie: Loading")
-//                            _removeMovieState.value = RemoveFavoriteMovieState(
-//                                isLoading = true
-//                            )
+                            _movieDetailsState.value = MovieDetailsState(
+                                isLoading = true
+                            )
                         }
 
                         is Resource.Success -> {
                             try {
-                                val removeMovieResult =
-                                    result.data
+                                val removeMovieResult = result.data
                                 Log.d(TAG, "removeFavoriteMovie result: $removeMovieResult")
                                 if (removeMovieResult != null && removeMovieResult > 0) {
 
-                                    _movieDetailsState.value = _movieDetailsState.value.copy(
-                                        movieDetails = _movieDetailsState.value.movieDetails!!.copy(
-                                            isFavorite = false
-                                        )
-
+                                    _movieDetailsState.value = MovieDetailsState(
+                                        movieDetails = movieDetails!!.copy(isFavorite = false)
                                     )
-
-                                    _removeMovieState.value = RemoveFavoriteMovieState(
-                                        movieId = movieId
-                                    )
-
-
+                                    localMovieDetails = null
                                 }
 
                             } catch (e: Exception) {
                                 e.printStackTrace()
-                                _removeMovieState.value = RemoveFavoriteMovieState(
+                                _movieDetailsState.value = MovieDetailsState(
                                     error = "An unexpected error occurred"
                                 )
                             }
@@ -249,7 +240,7 @@ class MovieDetailsScreenViewModel @Inject constructor(
 
                         is Resource.Error -> {
                             Log.d(TAG, "removeFavoriteMovie: Error")
-                            _removeMovieState.value = RemoveFavoriteMovieState(
+                            _movieDetailsState.value = MovieDetailsState(
                                 error = "An unexpected error occurred"
                             )
                         }
@@ -260,11 +251,93 @@ class MovieDetailsScreenViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                _removeMovieState.value = RemoveFavoriteMovieState(
+                _movieDetailsState.value = MovieDetailsState(
                     error = "An unexpected error occurred"
                 )
             }
         }
+    }
+
+    fun updateFavoriteMovieStatus(
+        movie: FavoriteMovieDto, isFavorite: Boolean, isWatched: Boolean = false
+    ) {
+        Log.d(
+            TAG,
+            "localMovieDetails is null =${localMovieDetails == null}  id -> ${movie.id}  updateFavoriteMovie id: ${movie.movieId} isFavorite - > $isFavorite isWatched -> $isWatched"
+        )
+        viewModelScope.launch {
+            if (localMovieDetails == null) {
+                Log.d(TAG, "<<<<<<<---------- Movie inserted --------->>>>>>>.")
+                insertToFavoriteMovieToLocal(movie)
+                return@launch
+            }
+
+            if (!isFavorite && !isWatched) {
+                Log.d(TAG, "<<<<<<<---------- Movie removed --------->>>>>>>.")
+                removeFavoriteMovieFromLocal(movieId = movie.movieId)
+                return@launch
+
+            }
+            Log.d(TAG, "<<<<<<<---------- Movie updated --------->>>>>>>.")
+            updateLocalFavoriteMovie(movie = movie, isFavorite = isFavorite)
+        }
+    }
+
+    private fun updateLocalFavoriteMovie(
+        movie: FavoriteMovieDto,
+        isFavorite: Boolean,
+        isWatched: Boolean = false
+    ) {
+        viewModelScope.launch {
+            try {
+                updateFavoriteMovieUseCase(
+                    movieId = movie.movieId, isFavorite = isFavorite
+                ).collect { result ->
+                    when (result) {
+                        is Resource.Loading -> {
+                            Log.d(TAG, "updateFavoriteMovie: Loading")
+                            _movieDetailsState.value = MovieDetailsState(
+                                isLoading = true
+                            )
+                        }
+
+                        is Resource.Success -> {
+                            try {
+                                val updateMovieStatusResult = result.data
+                                Log.d(
+                                    TAG, "updateFavoriteMovie result: $updateMovieStatusResult"
+                                )
+                                if (updateMovieStatusResult != null && movieDetails != null) {
+                                    _movieDetailsState.value = MovieDetailsState(
+                                        movieDetails = movieDetails!!.copy(isFavorite = updateMovieStatusResult.isFavorite)
+                                    )
+
+                                }
+
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                _movieDetailsState.value = MovieDetailsState(
+                                    error = "An unexpected error occurred"
+                                )
+                            }
+                        }
+
+                        is Resource.Error -> {
+                            Log.d(TAG, "updateFavoriteMovie: Error")
+                            _movieDetailsState.value = MovieDetailsState(
+                                error = "An unexpected error occurred"
+                            )
+                        }
+
+
+                    }
+
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
     }
 
 }

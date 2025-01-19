@@ -12,15 +12,32 @@ class MovieLocalRepositoryImpl @Inject constructor(
     private val dao: MovieDbDao,
 ) : MovieLocalRepository {
 
-    override suspend fun addFavoriteMovie(favoriteMovieDto: FavoriteMovieDto): Long {
-        return dao.addFavoriteMovie(favoriteMovieDto)
+    override suspend fun insertAndReturnMovie(favoriteMovieDto: FavoriteMovieDto)
+            : FavoriteMovieDto? {
+        return dao.insertAndReturnMovie(favoriteMovieDto)
+
     }
 
-    override suspend fun removeFavoriteMovie(movieId: Int): Int {
-        return dao.removeFavoriteMovie(movieId)
+    override suspend fun removeMovieFromDb(movieId: Int): Int {
+        return dao.removeMovieFromDb(movieId)
     }
 
-    override fun getAllFavoriteMovie(): Flow<List<FavoriteMovieDto>> {
-        return dao.getAllFavoriteMovie()
+    override suspend fun getAllLocalMovies(): Flow<List<FavoriteMovieDto>> {
+        return dao.getAllDbMovie()
+    }
+
+    override suspend fun updateFavoriteStatusAndReturnMovie(
+        movieId: Int,
+        isFavorite: Boolean
+    ): FavoriteMovieDto {
+        return dao.updateFavoriteStatusAndReturnMovie(movieId, isFavorite)
+    }
+
+    override suspend fun updateWatchListStatus(movieId: Int, isWatched: Boolean): Int {
+        return dao.updateWatchListStatus(movieId, isWatched)
+    }
+
+    override suspend fun getMovieById(movieId: Int): FavoriteMovieDto? {
+        return dao.getMovieById(movieId)
     }
 }

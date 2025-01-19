@@ -34,10 +34,4 @@ object AppModule {
         return MovieRepositoryImpl(api)
     }
 
-//    @Provides
-//    @Singleton
-//    fun provideMovieDatabase(@ApplicationContext context: Context): MovieDatabase {
-//        return Room.databaseBuilder(context, MovieDatabase::class.java, "movies.db").build()
-//
-//    }
 }

@@ -1,8 +1,5 @@
 package com.madura.movieapp.presentation.movieDetailsScreen
 
-import android.graphics.drawable.Icon
-import android.graphics.drawable.PaintDrawable
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,8 +22,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.outlined.AddCircle
-import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.rounded.AddCircle
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
@@ -46,19 +41,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -68,12 +60,10 @@ import com.madura.movieapp.R
 import com.madura.movieapp.common.ExpandedText
 import com.madura.movieapp.data.dto.movieDbDto.FavoriteMovieDto
 import com.madura.movieapp.data.dto.movieDetailsDto.Cast
-import com.madura.movieapp.data.dto.movieListDto.Movie
 import com.madura.movieapp.presentation.Screen
 import com.madura.movieapp.presentation.composible.MovieItem
 import com.madura.movieapp.presentation.theme.red
 import com.madura.movieapp.presentation.theme.white
-import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -86,41 +76,13 @@ fun MovieDetailsScreen(
 
     val state = viewModel.movieDetailsState.value
     val suggestionState = viewModel.movieSuggestionState.value
-    val removeFavoriteState = viewModel.removeMovieState.value
-    val insertToFavoriteState = viewModel.insertToFavoriteState.value
+
 
     val snackbarHostState = remember { SnackbarHostState() }
     var snackbarState by remember { mutableStateOf(false) }
     var snackBarMessage by remember { mutableStateOf("") }
     var snackBarColor by remember { mutableStateOf(Color.Green) }
 
-    LaunchedEffect(removeFavoriteState) {
-        if (removeFavoriteState.movieId != null) {
-            snackbarState = true
-            snackBarMessage = "Movie removed from favorites"
-            snackBarColor = Color.Green
-        }
-        if (removeFavoriteState.error.isNotBlank()) {
-            snackbarState = true
-            snackBarMessage = removeFavoriteState.error
-            snackBarColor = Color.Red
-        }
-
-    }
-
-    LaunchedEffect(insertToFavoriteState) {
-        if (insertToFavoriteState.id != null) {
-            snackbarState = true
-            snackBarMessage = "Movie added to favorites"
-            snackBarColor = Color.Green
-        }
-        if (removeFavoriteState.error.isNotBlank()) {
-            snackbarState = true
-            snackBarMessage = removeFavoriteState.error
-            snackBarColor = Color.Red
-        }
-
-    }
 
     LaunchedEffect(snackbarState) {
         if (snackbarState) {
@@ -273,17 +235,17 @@ fun MovieDetailsScreen(
                                         ) {
                                             IconButton(
                                                 onClick = {
-                                                    if (!state.movieDetails.isFavorite) {
-                                                        val favoriteMovieDto =
-                                                            addFavoriteMovie(movieDetails = state.movieDetails)
+                                                    state.movieDetails.isFavorite =
+                                                        !state.movieDetails.isFavorite;
 
-                                                        viewModel.insertToFavoriteMovie(
-                                                            favoriteMovieDto
-                                                        )
-                                                    } else {
-                                                        viewModel.removeFavoriteMovie(state.movieDetails.id!!)
-                                                    }
+                                                    val favoriteMovieDto =
+                                                        addFavoriteMovie(movieDetails = state.movieDetails)
 
+                                                    viewModel.updateFavoriteMovieStatus(
+                                                        favoriteMovieDto,
+                                                        isFavorite = state.movieDetails.isFavorite,
+                                                    )
+//
 
                                                 }) {
                                                 Icon(
@@ -365,7 +327,8 @@ fun MovieDetailsScreen(
 
                                     }
                                 }
-                        } else {
+
+                        } else if (!state.isLoading) {
                             item {
                                 Text(
                                     text = "Movie data details not found ",
@@ -374,21 +337,22 @@ fun MovieDetailsScreen(
                             }
                         }
 
-                        item {
-                            Text(
-                                modifier = Modifier.padding(
-                                    top = 10.dp,
-                                    start = 10.dp,
-                                    bottom = 10.dp
-                                ),
-                                text = "More Like This",
-                                textAlign = TextAlign.Left,
-                                style = MaterialTheme.typography.headlineLarge,
-                                fontSize = 20.sp,
-                                color = white, fontWeight = FontWeight.SemiBold
-                            )
-                        }
+
                         if (!suggestionState.suggestions.isNullOrEmpty()) {
+                            item {
+                                Text(
+                                    modifier = Modifier.padding(
+                                        top = 10.dp,
+                                        start = 10.dp,
+                                        bottom = 10.dp
+                                    ),
+                                    text = "More Like This",
+                                    textAlign = TextAlign.Left,
+                                    style = MaterialTheme.typography.headlineLarge,
+                                    fontSize = 20.sp,
+                                    color = white, fontWeight = FontWeight.SemiBold
+                                )
+                            }
 
 
                             item {
@@ -406,7 +370,8 @@ fun MovieDetailsScreen(
                                     }
                                 }
                             }
-                        } else {
+                        }
+                        else if (!state.isLoading) {
                             item {
                                 Text(
                                     text = "Movie suggestions not found ",
@@ -501,7 +466,7 @@ private fun addFavoriteMovie(movieDetails: com.madura.movieapp.data.dto.movieDet
                     .last()
             }min" else "_",
         isWatched = false,
-        isFavorite = true,
+        isFavorite = movieDetails.isFavorite,
 
         )
 }

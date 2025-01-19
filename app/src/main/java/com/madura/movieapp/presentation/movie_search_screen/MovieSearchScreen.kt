@@ -30,14 +30,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.madura.movieapp.R
 import com.madura.movieapp.presentation.Screen
 import com.madura.movieapp.presentation.composible.MovieItem
 import com.madura.movieapp.presentation.composible.SearchTextField
+import com.madura.movieapp.presentation.theme.white
 import com.madura.movieapp.ui.composable.OnBottomReached
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -77,6 +80,17 @@ fun MovieSearchScreen(
                     .fillMaxSize()
                     .padding(start = 8.dp, end = 8.dp, top = 8.dp)
             ) {
+
+                Text(
+                    modifier = Modifier.padding(top = 10.dp, start = 10.dp, bottom = 10.dp),
+                    text = "Search your movie here",
+                    textAlign = TextAlign.Left,
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontSize = 20.sp,
+                    color = white, fontWeight = FontWeight.SemiBold
+                )
+                Spacer(Modifier.height(10.dp))
+
                 SearchTextField { value ->
                     searchQuery = value
                     if (searchQuery == "" || searchQuery.isEmpty()) {

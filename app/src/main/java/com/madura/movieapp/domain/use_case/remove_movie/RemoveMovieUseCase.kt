@@ -1,4 +1,4 @@
-package com.madura.movieapp.domain.use_case.remove_favorite_movie
+package com.madura.movieapp.domain.use_case.remove_movie
 
 import android.util.Log
 import com.madura.movieapp.common.Resource
@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
-class RemoveFavoriteMovieUseCase @Inject constructor(
+class RemoveMovieUseCase @Inject constructor(
     private val movieLocalRepositoryImpl: MovieLocalRepositoryImpl
 ) {
     val TAG = "RemoveFavoriteMovieUseCase"
@@ -16,7 +16,7 @@ class RemoveFavoriteMovieUseCase @Inject constructor(
         Log.d(TAG, "Remove from favorite movie invoke: $movieId")
         try {
             emit(Resource.Loading<Int>())
-            val result = movieLocalRepositoryImpl.removeFavoriteMovie(movieId = movieId)
+            val result = movieLocalRepositoryImpl.removeMovieFromDb(movieId = movieId)
             Log.d(TAG, "Remove from favorite movie invoke result: $result")
             emit(Resource.Success<Int>(data = result))
         } catch (e: Exception) {
