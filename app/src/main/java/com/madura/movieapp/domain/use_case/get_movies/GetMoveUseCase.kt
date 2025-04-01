@@ -3,6 +3,7 @@ package com.madura.movieapp.domain.use_case.get_movies
 import android.util.Log
 import com.madura.movieapp.common.Resource
 import com.madura.movieapp.data.dto.movieListDto.MovieListDto
+import com.madura.movieapp.data.dto.tmdb.trending.Trending
 import com.madura.movieapp.domain.repository.MovieRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -15,34 +16,26 @@ class GetMoveUseCase @Inject constructor(
 ) {
     val TAG = "GetMoveUseCase"
     operator fun invoke(
-        page: Int?,
-        query: String?,
-        sortBy: String?,
-        genre: String?,
-    ): Flow<Resource<MovieListDto>> =
+    ): Flow<Resource<Trending>> =
         flow {
             try {
-                Log.d(
-                    TAG,
-                    "get movies request - >   page - $page query - $query sortBy - $sortBy genre - $genre"
-                )
-                emit(Resource.Loading<MovieListDto>())
+                emit(Resource.Loading<Trending>())
                 val movies =
-                    repository.getMovies(page = page, query = query, sortBy = sortBy, genre = genre)
+                    repository.getPopularMoviesAndTvShowsByWeek()
                 Log.d(TAG, "get movies response - >  ${movies.toString()}")
 
-                emit(Resource.Success<MovieListDto>(movies))
+                emit(Resource.Success<Trending>(movies))
             } catch (e: HttpException) {
                 Log.e(TAG, "get movies error ->>>> ${e.printStackTrace()} ")
                 emit(
-                    Resource.Error<MovieListDto>(
+                    Resource.Error<Trending>(
                         e.localizedMessage ?: "An unexpected error occurred"
                     )
                 )
             } catch (e: IOException) {
                 Log.e(TAG, "get movies error ->>>> ${e.printStackTrace()} ")
                 emit(
-                    Resource.Error<MovieListDto>(
+                    Resource.Error<Trending>(
                         e.localizedMessage
                             ?: "Couldn't reach server. Check your internet connection"
                     )

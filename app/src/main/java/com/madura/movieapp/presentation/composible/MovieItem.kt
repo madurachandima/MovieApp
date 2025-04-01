@@ -12,6 +12,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.madura.movieapp.common.Constants.IMAGE_BASE_URL
 
 @Composable
 fun MovieItem(url: String, modifier: Modifier, radius: Dp = 10.dp) {
@@ -22,10 +23,11 @@ fun MovieItem(url: String, modifier: Modifier, radius: Dp = 10.dp) {
             .clip(shape = RoundedCornerShape(radius))
     ) {
         AsyncImage(
-            model = url,
+            model = IMAGE_BASE_URL + url,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
+
         )
     }
 }

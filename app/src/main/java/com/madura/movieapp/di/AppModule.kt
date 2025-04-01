@@ -12,6 +12,8 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import okhttp3.Interceptor
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
@@ -23,9 +25,23 @@ object AppModule {
     @Provides
     @Singleton
     fun provideMovieApi(): MovieAppApi {
-        return Retrofit.Builder().baseUrl(Constants.BASE_URL).addConverterFactory(
-            GsonConverterFactory.create()
-        ).build().create(MovieAppApi::class.java)
+        val interceptor = Interceptor { chain ->
+            val request = chain.request().newBuilder()
+                .addHeader("Authorization", "Bearer ${Constants.API_KEY}")
+                .build()
+            chain.proceed(request)
+        }
+
+        val client = OkHttpClient.Builder()
+            .addInterceptor(interceptor)
+            .build()
+
+        return Retrofit.Builder()
+            .baseUrl(Constants.BASE_URL)
+            .client(client)
+            .addConverterFactory(
+                GsonConverterFactory.create()
+            ).build().create(MovieAppApi::class.java)
     }
 
     @Provides

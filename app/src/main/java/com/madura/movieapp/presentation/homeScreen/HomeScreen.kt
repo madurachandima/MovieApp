@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,33 +14,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.Favorite
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.List
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,9 +40,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.madura.movieapp.common.Category.movieGenre
-import com.madura.movieapp.presentation.Screen
+import com.madura.movieapp.common.MediaType
+import com.madura.movieapp.data.dto.tmdb.genre.Genre
 import com.madura.movieapp.presentation.composible.MovieItem
+import com.madura.movieapp.presentation.homeScreen.composable.MovieOrTv
+import com.madura.movieapp.presentation.homeScreen.composable.TrendingMedia
 import com.madura.movieapp.presentation.theme.darkPurple
 import com.madura.movieapp.presentation.theme.red
 import com.madura.movieapp.presentation.theme.white
@@ -70,101 +61,146 @@ data class BottomNavigationItem(
 
 @Composable
 fun HomeScreen(
-    navController: NavController,
-    viewModel: HomeScreenViewModel = hiltViewModel(),
+    navController: NavController?,
+    viewModel: HomeScreenViewModel? = hiltViewModel(),
 ) {
 
     val TAG = "HomeScreen"
-    val state = viewModel.state.value
-    val popularState = viewModel.popularMovieState.value
+
+    val popularState = viewModel!!.popularMovieState.value
+    val genreMediaState = viewModel.mediaByGenreState.value
+
+    val genreState = viewModel.genreState.value
 
     val gridState = rememberLazyGridState()
 
-    val selectedGenre = remember {
-        mutableStateOf("All")
-    }
 
     val coroutineScope = rememberCoroutineScope()
+    val mediaTypes = listOf("Movies", "Tv Series")
+
+    var mediaType by remember { mutableStateOf(mediaTypes[0]) }
+
+    var currentGenreList by remember { mutableStateOf(listOf<Genre>()) }
+
+    var isInitialLoad by remember { mutableStateOf(false) }
+
+    var selectedGenreId by remember {
+        mutableIntStateOf(0)
+    }
+
+    LaunchedEffect(genreState.genres) {
+        if (!isInitialLoad && viewModel.movieGenres.value.isNotEmpty()) {
+            currentGenreList = viewModel.movieGenres.value
+            isInitialLoad = true
+            Log.d(
+                TAG,
+                "isInitialLoad HomeScreen LaunchedEffect: ${viewModel.movieGenres.value.size}"
+            )
+        }
+    }
+
+    fun getMediaByGenreId(mediaType: String, genreId: String) {
+        coroutineScope.launch {
+            viewModel.getMediaByGenreId(
+                mediaType = mediaType,
+                genreId = genreId
+            )
+        }
+    }
+
+    LaunchedEffect(mediaType) {
+        if (viewModel.movieGenres.value.isNotEmpty() && viewModel.tvSeriesGenres.value.isNotEmpty()) {
+            currentGenreList = if (mediaType == "Movies") {
+                viewModel.movieGenres.value
+            } else {
+                viewModel.tvSeriesGenres.value
+            }
+            selectedGenreId = currentGenreList.first().id
+            getMediaByGenreId(mediaType = mediaType, genreId = selectedGenreId.toString())
+        }
+
+
+    }
+
 
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-    )
-    { contentPadding ->
+    ) { contentPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(contentPadding)
         ) {
-            if (popularState.sortedMovies.isNotEmpty() && viewModel.movieList.value.isNotEmpty())
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(start = 8.dp, end = 8.dp, top = 8.dp)
-                )
-                {
 
-                    Text(
-                        modifier = Modifier.padding(top = 10.dp, start = 10.dp, bottom = 10.dp),
-                        text = "Popular Downloads",
-                        textAlign = TextAlign.Left,
-                        style = MaterialTheme.typography.headlineLarge,
-                        fontSize = 20.sp,
-                        color = white, fontWeight = FontWeight.SemiBold
-                    )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = 8.dp, end = 8.dp, top = 8.dp)
+            ) {
+                TrendingMedia(popularState, navController!!)
 
-                    LazyRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp),
+                Spacer(modifier = Modifier.height(15.dp))
 
-                        verticalAlignment = Alignment.Top
+                if (!viewModel.genreState.value.isLoading) {
+                    MovieOrTv(
+                        mediaTypes = mediaTypes,
+                        mediaType = mediaType
                     ) {
-                        items(popularState.sortedMovies) { sortedMovie ->
-                            MovieItem(url = sortedMovie.medium_cover_image, Modifier.clickable {
-                                navController.navigate(Screen.MovieDetailsScreen.route + "/${sortedMovie.id}")
-                            })
-                        }
+                        mediaType = it
                     }
 
-
                     Text(
                         modifier = Modifier.padding(top = 10.dp, start = 10.dp, bottom = 10.dp),
-                        text = "Movies For You",
+                        text = "$mediaType For You",
                         textAlign = TextAlign.Left,
                         style = MaterialTheme.typography.headlineLarge,
                         fontSize = 20.sp,
-                        color = white, fontWeight = FontWeight.SemiBold
+                        color = white,
+                        fontWeight = FontWeight.SemiBold
                     )
+                }
+
+
+                if (!viewModel.genreState.value.isLoading && viewModel.genreState.value.genres != null && currentGenreList.isNotEmpty()) {
+
+                    if (selectedGenreId == 0)
+                        selectedGenreId = currentGenreList.first().id
 
                     LazyRow(modifier = Modifier.height(35.dp)) {
-                        itemsIndexed(movieGenre) { index, genre ->
-                            val isSelected = genre == selectedGenre.value
+                        itemsIndexed(
+                            currentGenreList
+                        )
+                        { index, genre ->
                             Box(
                                 modifier = Modifier
-                                    .padding(end = if (movieGenre.size - 1 == index) 0.dp else 9.dp)
+                                    .padding(end = if (currentGenreList.size - 1 == index) 0.dp else 9.dp)
                                     .clip(shape = RoundedCornerShape(10.dp))
-                                    .background(color = if (isSelected) red else darkPurple)
+                                    .background(color = if (genre.id == selectedGenreId) red else darkPurple)
                                     .clickable {
                                         coroutineScope
                                             .launch {
-                                                selectedGenre.value = genre
-                                                Log.d(
-                                                    TAG,
-                                                    "selected value = ${selectedGenre.value}"
-                                                )
-                                                viewModel.getMovies(
-                                                    genre = if (selectedGenre.value == "All") null else selectedGenre.value,
-                                                    resetPage = true
-                                                )
+                                                if (selectedGenreId == genre.id) return@launch
+
+                                                selectedGenreId = genre.id
+                                                if (mediaType == "Movies") {
+                                                    viewModel.getMediaByGenreId(
+                                                        mediaType = MediaType.movie.name,
+                                                        genreId = selectedGenreId.toString()
+                                                    )
+                                                } else {
+                                                    viewModel.getMediaByGenreId(
+                                                        mediaType = MediaType.tv.name,
+                                                        genreId = selectedGenreId.toString()
+                                                    )
+                                                }
+
                                             }
-
-
                                     }
 
                             ) {
                                 Text(
-                                    text = genre,
+                                    text = genre.name,
                                     modifier = Modifier.padding(
                                         top = 4.dp,
                                         bottom = 4.dp,
@@ -177,33 +213,56 @@ fun HomeScreen(
                                 )
                             }
                         }
-
                     }
-
-                    if (!state.isLoading)
-                        LazyVerticalGrid(
-                            state = gridState,
-                            columns = GridCells.Adaptive(minSize = 100.dp),
-                            contentPadding = PaddingValues(0.dp)
-                        ) {
-                            itemsIndexed(viewModel.movieList.value) { index, item ->
-                                MovieItem(url = item.medium_cover_image, Modifier.clickable {
-                                    navController.navigate(Screen.MovieDetailsScreen.route + "/${item.id}")
-                                })
-                            }
-                        }
-
                 }
 
-            if (viewModel.movieList.value.isNotEmpty()) {
+
+
+                if (!genreMediaState.isLoading && viewModel.movieOrTvSeries.value != null && viewModel.movieOrTvSeries.value!!.isNotEmpty()) {
+                    LazyVerticalGrid(
+                        state = gridState,
+                        columns = GridCells.Adaptive(minSize = 100.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        items(viewModel.movieOrTvSeries.value!!) { item ->
+                            if (item?.poster_path != null)
+                                MovieItem(url = item.poster_path ?: "", Modifier.clickable {
+//                                navController?.navigate(Screen.MovieDetailsScreen.route + "/${sortedMovie.id}")
+                                })
+                        }
+
+                    }
+                }
+
+
+            }
+
+
+
+
+            if (!viewModel.movieOrTvSeries.value.isNullOrEmpty()) {
                 gridState.OnBottomReached {
-                    viewModel.getMovies()
+//                    if (mediaType == "Movies") {
+//                        viewModel.getMediaByGenreId(
+//                            mediaType = MediaType.movie.name,
+//                            genreId = selectedGenreId.toString()
+//                        )
+//                    } else {
+//                        viewModel.getMediaByGenreId(
+//                            mediaType = MediaType.tv.name,
+//                            genreId = selectedGenreId.toString()
+//                        )
+//                    }
                 }
             }
 
-            if (popularState.error.isNotBlank() || state.error.isNotBlank()) {
+            if (genreMediaState.error.isNotBlank() || genreState.error.isNotBlank() || popularState.error!!.isNotBlank()) {
                 Text(
-                    text = state.error.ifBlank { popularState.error },
+                    text = genreState.error.ifBlank {
+                        genreMediaState.error.ifBlank {
+                            popularState.error ?: ""
+                        }
+                    },
                     color = MaterialTheme.colorScheme.error,
                     textAlign = TextAlign.Center,
                     modifier = Modifier
@@ -215,10 +274,13 @@ fun HomeScreen(
                 )
             }
 
-            if (popularState.isLoading || state.isLoading) {
+            if (popularState.isLoading || genreState.isLoading || genreMediaState.isLoading
+            ) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
         }
     }
 
 }
+
+
