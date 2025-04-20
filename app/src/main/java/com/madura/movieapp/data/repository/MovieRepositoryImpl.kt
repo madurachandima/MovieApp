@@ -52,20 +52,25 @@ class MovieRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getGenre(genre: String): Genres {
-        return api.getGenre(genre = genre)
+        val genreType = if (genre == "movie" || genre == "Movies") {
+            "movie"
+        } else {
+            "tv"
+        }
+        return api.getGenre(genre = genreType)
     }
 
     override suspend fun getMovieOrTvSeriesByGenre(
         mediaType: String,
-        genreId: String
+        genreId: String,
+        page: Int
     ): MediaByGenre {
-        Log.d("TAG", "getMovieOrTvSeriesByGenre: media type-> $mediaType  genre ID ->$genreId")
         val type = if (mediaType == "movie" || mediaType == "Movies") {
             "movie"
         } else {
             "tv"
         }
 
-        return api.getMovieOrTvSeriesByGenre(genreId = genreId, mediaType = type)
+        return api.getMovieOrTvSeriesByGenre(genreId = genreId, mediaType = type, page = page)
     }
 }

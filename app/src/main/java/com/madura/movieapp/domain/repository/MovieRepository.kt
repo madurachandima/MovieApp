@@ -24,6 +24,10 @@ interface MovieRepository {
 
     suspend fun getGenre(genre: String): Genres
 
-    suspend fun getMovieOrTvSeriesByGenre(mediaType: String, genreId: String): MediaByGenre
+    suspend fun getMovieOrTvSeriesByGenre(
+        mediaType: String,
+        genreId: String,
+        page: Int
+    ): MediaByGenre
 
 }

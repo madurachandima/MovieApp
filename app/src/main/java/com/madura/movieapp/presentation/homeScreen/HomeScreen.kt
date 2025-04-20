@@ -24,12 +24,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -72,30 +74,38 @@ fun HomeScreen(
 
     val genreState = viewModel.genreState.value
 
-    val gridState = rememberLazyGridState()
-
 
     val coroutineScope = rememberCoroutineScope()
     val mediaTypes = listOf("Movies", "Tv Series")
 
-    var mediaType by remember { mutableStateOf(mediaTypes[0]) }
+    var mediaType by remember { mutableStateOf("") }
 
     var currentGenreList by remember { mutableStateOf(listOf<Genre>()) }
 
     var isInitialLoad by remember { mutableStateOf(false) }
+    var isInitialAppLoad by remember { mutableStateOf(false) }
+    var isInitialTvLoad by remember { mutableStateOf(true) }
 
     var selectedGenreId by remember {
         mutableIntStateOf(0)
     }
 
+    val gridState = rememberLazyGridState()
+
+    var ignoreBottomReached by remember { mutableStateOf(false) }
     LaunchedEffect(genreState.genres) {
         if (!isInitialLoad && viewModel.movieGenres.value.isNotEmpty()) {
             currentGenreList = viewModel.movieGenres.value
             isInitialLoad = true
-            Log.d(
-                TAG,
-                "isInitialLoad HomeScreen LaunchedEffect: ${viewModel.movieGenres.value.size}"
-            )
+        }
+    }
+
+
+
+    LaunchedEffect(Unit) {
+        if (!isInitialAppLoad) {
+            isInitialAppLoad = true
+            mediaType = mediaTypes.first()
         }
     }
 
@@ -108,20 +118,26 @@ fun HomeScreen(
         }
     }
 
-    LaunchedEffect(mediaType) {
+    suspend fun onChangeMediaType(mediaType: String) {
+
         if (viewModel.movieGenres.value.isNotEmpty() && viewModel.tvSeriesGenres.value.isNotEmpty()) {
             currentGenreList = if (mediaType == "Movies") {
                 viewModel.movieGenres.value
             } else {
                 viewModel.tvSeriesGenres.value
             }
+            if (mediaType != "Movies") {
+                isInitialTvLoad = false
+            }
             selectedGenreId = currentGenreList.first().id
+            gridState.scrollToItem(0)
+            ignoreBottomReached = true
             getMediaByGenreId(mediaType = mediaType, genreId = selectedGenreId.toString())
+            snapshotFlow { genreMediaState.isLoading }.collect { isLoading ->
+                if (!isLoading) ignoreBottomReached = false
+            }
         }
-
-
     }
-
 
 
     Scaffold(
@@ -148,6 +164,8 @@ fun HomeScreen(
                         mediaType = mediaType
                     ) {
                         mediaType = it
+                        coroutineScope.launch { onChangeMediaType(mediaType = mediaType) }
+
                     }
 
                     Text(
@@ -181,20 +199,24 @@ fun HomeScreen(
                                         coroutineScope
                                             .launch {
                                                 if (selectedGenreId == genre.id) return@launch
-
                                                 selectedGenreId = genre.id
+                                                gridState.scrollToItem(0)
+                                                ignoreBottomReached = true
+
                                                 if (mediaType == "Movies") {
-                                                    viewModel.getMediaByGenreId(
-                                                        mediaType = MediaType.movie.name,
+                                                    getMediaByGenreId(
+                                                        mediaType = MediaType.Movies.name,
                                                         genreId = selectedGenreId.toString()
                                                     )
                                                 } else {
-                                                    viewModel.getMediaByGenreId(
+                                                    getMediaByGenreId(
                                                         mediaType = MediaType.tv.name,
                                                         genreId = selectedGenreId.toString()
                                                     )
                                                 }
-
+                                                snapshotFlow { genreMediaState.isLoading }.collect { isLoading ->
+                                                    if (!isLoading) ignoreBottomReached = false
+                                                }
                                             }
                                     }
 
@@ -230,31 +252,22 @@ fun HomeScreen(
 //                                navController?.navigate(Screen.MovieDetailsScreen.route + "/${sortedMovie.id}")
                                 })
                         }
+                        item {
+                            if (genreMediaState.isPaginationLoading) {
+                                Box(modifier = Modifier
+                                    .fillMaxWidth()
+                                    .align(Alignment.End)) {
+                                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                                }
 
+                            }
+                        }
                     }
                 }
 
 
             }
 
-
-
-
-            if (!viewModel.movieOrTvSeries.value.isNullOrEmpty()) {
-                gridState.OnBottomReached {
-//                    if (mediaType == "Movies") {
-//                        viewModel.getMediaByGenreId(
-//                            mediaType = MediaType.movie.name,
-//                            genreId = selectedGenreId.toString()
-//                        )
-//                    } else {
-//                        viewModel.getMediaByGenreId(
-//                            mediaType = MediaType.tv.name,
-//                            genreId = selectedGenreId.toString()
-//                        )
-//                    }
-                }
-            }
 
             if (genreMediaState.error.isNotBlank() || genreState.error.isNotBlank() || popularState.error!!.isNotBlank()) {
                 Text(
@@ -281,6 +294,17 @@ fun HomeScreen(
         }
     }
 
+
+
+    if (gridState.isScrollInProgress && viewModel.movieOrTvSeries.value!!.isNotEmpty() && !genreMediaState.isPaginationLoading && !genreMediaState.isLoading) {
+        gridState.OnBottomReached {
+            getMediaByGenreId(
+                mediaType = mediaType,
+                genreId = selectedGenreId.toString()
+            )
+        }
+    }
 }
+
 
 

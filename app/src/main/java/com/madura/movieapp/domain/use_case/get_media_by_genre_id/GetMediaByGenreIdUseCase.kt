@@ -13,12 +13,17 @@ class GetMediaByGenreIdUseCase @Inject constructor(
 ) {
     val TAG = "GetMediaByGenreId"
 
-    operator fun invoke(genreId: String, mediaType: String): Flow<Resource<MediaByGenre>> = flow {
+    operator fun invoke(
+        genreId: String,
+        mediaType: String,
+        page: Int
+    ): Flow<Resource<MediaByGenre>> = flow {
         try {
             emit(Resource.Loading<MediaByGenre>())
             val result = movieRepositoryImpl.getMovieOrTvSeriesByGenre(
                 genreId = genreId,
-                mediaType = mediaType
+                mediaType = mediaType,
+                page =page
             )
             Log.d(TAG, "GetMediaByGenreId invoke result: $result")
             emit(Resource.Success<MediaByGenre>(data = result))

@@ -13,8 +13,10 @@ import com.madura.movieapp.domain.use_case.get_media_by_genre_id.GetMediaByGenre
 import com.madura.movieapp.domain.use_case.get_movie_genre.GetMovieGenreUseCase
 import com.madura.movieapp.domain.use_case.get_movies.GetMoveUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -42,17 +44,33 @@ class HomeScreenViewModel @Inject constructor(
     var movieOrTvSeries = mutableStateOf<ArrayList<Result?>?>(arrayListOf())
 
     private var page: Int = 1
-    private val query: String = ""
+    private var mediaType: String = ""
+    private var genreId: String = ""
 
 
     init {
-        getGenres(mediaType = MediaType.movie.name)
-        getGenres(mediaType = MediaType.tv.name)
-        getTrendingMovies()
-
-
+        page = 1
+        callInit()
+        Log.d(TAG, "HomeScreenViewModel init")
     }
 
+    private fun callInit() {
+        viewModelScope.launch {
+            val movieGenresDeferred = async { getGenres(mediaType = MediaType.Movies.name) }
+            val tvGenresDeferred = async { getGenres(mediaType = MediaType.tv.name) }
+            movieGenresDeferred.await()
+            tvGenresDeferred.await()
+
+            if (movieGenres.value.isNotEmpty()) {
+                Log.d(TAG, "HomeScreenViewModel init 2")
+                getMediaByGenreId(
+                    mediaType = MediaType.Movies.name,
+                    genreId = movieGenres.value.first().id.toString(),
+                )
+            }
+            getTrendingMovies()
+        }
+    }
 
     private fun getTrendingMovies() {
         getMoveUseCase().onEach { result ->
@@ -96,17 +114,13 @@ class HomeScreenViewModel @Inject constructor(
                 is Resource.Success -> {
                     try {
                         _genreState.value = HomeMovieGenreState(genres = result.data)
-
-                        if (mediaType == MediaType.movie.name) {
+                        if (mediaType == MediaType.Movies.name) {
                             movieGenres.value = result.data!!.genres
                             if (movieGenres.value.isNotEmpty()) {
-                                Log.d(
-                                    TAG,
-                                    "default genre id ------>>>>>>>>>> ${movieGenres.value.first().id}"
-                                )
+                                Log.d(TAG, "HomeScreenViewModel init 2")
                                 getMediaByGenreId(
-                                    mediaType = MediaType.movie.name,
-                                    genreId = movieGenres.value.first().id.toString()
+                                    mediaType = MediaType.Movies.name,
+                                    genreId = movieGenres.value.first().id.toString(),
                                 )
                             }
                         } else {
@@ -141,19 +155,37 @@ class HomeScreenViewModel @Inject constructor(
     fun getMediaByGenreId(
         mediaType: String,
         genreId: String,
-    ) {
-        getMediaByGenreIdUseCase(genreId = genreId, mediaType).onEach { result ->
+
+        ) {
+        if (this.mediaType != mediaType) {
+            this.mediaType = mediaType
+            page = 1
+        }
+
+        if (this.genreId != genreId) {
+            this.genreId = genreId
+            page = 1
+        }
+
+        getMediaByGenreIdUseCase(
+            genreId = this.genreId,
+            this.mediaType,
+            page = this.page
+        ).onEach { result ->
             when (result) {
                 is Resource.Success -> {
                     try {
                         if (result.data!!.results != null) {
                             _mediaByGenreState.value =
                                 MediaByGenreState(movies = result.data.results!!)
-                            Log.d(TAG, "getMediaByGenreId ====>>>> ${result.data.results}")
-                            movieOrTvSeries.value = result.data.results
+
+                            if (page == 1) {
+                                movieOrTvSeries.value = result.data.results
+                            } else {
+                                movieOrTvSeries.value?.addAll(result.data.results)
+                            }
+                            page += 1
                         }
-
-
                     } catch (e: Exception) {
                         _mediaByGenreState.value =
                             MediaByGenreState(
@@ -171,8 +203,14 @@ class HomeScreenViewModel @Inject constructor(
                 }
 
                 is Resource.Loading -> {
-                    _mediaByGenreState.value =
-                        MediaByGenreState(isLoading = true)
+                    if (page == 1) {
+                        _mediaByGenreState.value =
+                            MediaByGenreState(isLoading = true)
+                    } else {
+                        _mediaByGenreState.value =
+                            MediaByGenreState(isPaginationLoading = true)
+                    }
+
                 }
 
             }

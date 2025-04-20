@@ -45,5 +45,6 @@ interface MovieAppApi {
     suspend fun getMovieOrTvSeriesByGenre(
         @Path("mediaType") mediaType: String,
         @Query("with_genres") genreId: String,
+        @Query("page") page: Int,
     ): MediaByGenre
 }
